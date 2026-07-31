@@ -163,6 +163,41 @@ Each experimental design lives in its own folder (dca/, bdca/, factorial/),
 with raw data under datos_crudos/<design>/ and outputs under
 <design>/resultados/ (database, tablas, figuras, reportes, excel).
 
+## 4.1 Raw CSV provenance
+
+The BDCA raw CSV `DBCA_Jenkyn_control_mildeo.csv` lives under
+`datos_crudos/bdca/`. Its schema (columns) is `plot, trt, block, yield`.
+All transformations preserve the original values; no column is modified
+in-place. The file is never overwritten, and all derived variables document
+their source columns, formulas and reasons.
+
+## 4.2 Raw data validation rules
+
+- Duplicate observations are identified and reported.
+- Missing values are recorded but not imputed.
+- Inconsistent labels are identified but preserved.
+- Ambiguous concentration mappings are flagged.
+- Technical vs biological replicates are distinguished.
+- Pseudoreplication (technical replicates measuring the same biological unit) is detected.
+- Outliers are identified but not automatically removed.
+- Impossible values are flagged.
+- All exclusions must be documented.
+
+## 4.3 Design-specific provenance
+
+When `PIPELINE_DISENO=bdca`:
+- The CSV source is `datos_crudos/bdca/DBCA_Jenkyn_control_mildeo.csv`.
+- Derived variables from this source are annotated with this provenance.
+
+When `PIPELINE_DISENO=dca`:
+- The Excel source is `datos_crudos/dca/datos-proyectos tomillo-fusarium.xlsx`.
+- Derived variables from this source are annotated with this provenance.
+
+When `PIPELINE_DISENO=factorial` (future design):
+- TBD.
+
+All raw data files are immutable within the experimental design's directory.
+
 Preserve the original file.
 
 Never overwrite raw data.

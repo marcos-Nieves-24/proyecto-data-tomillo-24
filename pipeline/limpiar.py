@@ -7,6 +7,10 @@ dataset maestro (CSV y XLSX) junto con el diccionario de datos.
 
 También valida de forma informativa la fórmula del %INH reportado por el
 laboratorio frente a (1 - C1/C4) * 100.
+
+Provenance de datos crudos:
+- DCA: Excel con controles C4 (`datos_crudos/dca/datos-proyectos tomillo-fusarium.xlsx`)
+- BDCA: CSV `DBCA_Jenkyn_control_mildeo.csv` (`datos_crudos/bdca/`); columnas `plot, trt, block, yield`
 """
 
 from __future__ import annotations

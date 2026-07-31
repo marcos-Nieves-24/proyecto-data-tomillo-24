@@ -3,6 +3,10 @@
 Genera ``informe_final.md`` (español profesional y neutro) con las secciones
 solicitadas y lo convierte a ``informe_final.html`` con un CSS simple y
 legible. El informe integra los resultados de todas las fases previas.
+
+Provenance de datos crudos:
+- DCA: Excel con controles C4 (`datos_crudos/dca/datos-proyectos tomillo-fusarium.xlsx`)
+- BDCA: CSV `DBCA_Jenkyn_control_mildeo.csv` (`datos_crudos/bdca/`); columnas `plot, trt, block, yield`
 """
 
 from __future__ import annotations
