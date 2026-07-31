@@ -1,15 +1,20 @@
 """Configuracion central de la pipeline reproducible.
 
-Define rutas de entrada/salida (incluido el Excel crudo del laboratorio),
+Define rutas de entrada/salida (incluido el Excel crudo del laboratorio y el CSV crudo del BDCA),
 constantes cientificas, semillas aleatorias y utilidades de exportacion
 (figuras PNG/PDF, tablas CSV y libros Excel) compartidas por todos los
 modulos.
 
 Los directorios de salida se crean automaticamente al importar el modulo.
+
+Provenance de datos crudos:
+- `EXCEL_CRUDO`: Excel con controles C4 para el diseño DCA (`datos_crudos/dca/...`)
+- BDCA: CSV `DBCA_Jenkyn_control_mildeo.csv` (`datos_crudos/bdca/`); columnas `plot, trt, block, yield`
 """
 
 from __future__ import annotations
 
+import os
 import unicodedata
 from pathlib import Path
 
@@ -24,11 +29,34 @@ import pandas as pd
 
 RAIZ = Path(__file__).resolve().parent.parent
 
-# Diseno experimental activo. Cada analisis vive en su carpeta (dca/, bdca/,
-# factorial/) con sus propios datos crudos y resultados.
-DISENO = "dca"
-DIR_DISENO = RAIZ / DISENO
-DIR_CRUDOS = RAIZ / "datos_crudos" / DISENO
+# Disenios experimentales soportados. Cada analisis vive en su carpeta (dca/, bdca/, factorial/)
+# con sus propios datos crudos y resultados.
+DISENOS = {
+    "dca": {"nombre": "DCA", "dir_diseno": RAIZ / "dca", "dir_crudos": RAIZ / "datos_crudos" / "dca"},
+    "bdca": {"nombre": "BDCA", "dir_diseno": RAIZ / "bdca", "dir_crudos": RAIZ / "datos_crudos" / "bdca"},
+}
+
+def _resolver_diseno_activo():
+    """Resolver el diseno experimental activo desde la variable de entorno.
+    
+    Returns:
+        El diseno activo ("dca" o "bdca").
+    
+    Raises:
+        No errors; si el valor es desconocido, usa "dca" y emite un warning.
+    """
+    desde = os.environ.get("PIPELINE_DISENO", "").strip()
+    if not desde or desde not in DISENOS:
+        if desde:
+            import warnings
+            warnings.warn(f"Valor desconocido de PIPELINE_DISENO: {desde!r}. Usando diseno predeterminado: 'dca'.", stacklevel=2)
+        return "dca"
+    return desde
+
+# Diseno experimental activo. Resuelto en tiempo de importacion, antes de crear directorios de salida.
+DISENO = _resolver_diseno_activo()
+DIR_DISENO = DISENOS[DISENO]["dir_diseno"]
+DIR_CRUDOS = DISENOS[DISENO]["dir_crudos"]
 
 # Excel crudo del laboratorio: fuente de los controles C4 por aislado (hojas
 # MACERACIÓN, SOXHLET y ULTRASONIDO). No debe modificarse.
