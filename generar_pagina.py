@@ -1892,30 +1892,62 @@ p.sub{font-size:1.1rem;color:var(--gris);max-width:760px;margin:0 0 2.2rem;}
   padding:.18rem .6rem;margin-bottom:.6rem;}
 .estado.activo{background:#E3F2E9;color:#1B7A43;}
 .estado.futuro{background:#F2F3F5;color:#6B7280;}
-.pie{color:var(--gris);font-size:.85rem;margin-top:2.4rem;}
-a.pie-enlace{color:var(--azul);text-decoration:none;}
-"""
+ .pie{color:var(--gris);font-size:.85rem;margin-top:2.4rem;}
+ a.pie-enlace{color:var(--azul);text-decoration:none;}
+ .ventanas{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+   gap:1.4rem;align-items:stretch;margin-bottom:2.4rem;}
+ .ventana{border:1px solid var(--borde);border-radius:12px;background:var(--fondo-suave);
+   box-shadow:0 2px 10px rgba(0,0,0,.06);overflow:hidden;display:flex;flex-direction:column;}
+ .ventana-barra{display:flex;align-items:center;justify-content:space-between;gap:.8rem;
+   background:#fff;border-bottom:1px solid var(--borde);padding:.7rem 1.1rem;}
+ .ventana-barra h2{margin:0;font-size:1rem;color:var(--azul);}
+ .ventana.bdca .ventana-barra h2{color:var(--naranja);}
+ .ventana-barra .estado{margin-bottom:0;}
+ .ventana-cuerpo{padding:1.15rem 1.3rem 1.3rem;display:flex;flex-direction:column;flex:1;}
+ .ventana-cuerpo p{margin:0 0 .75rem;font-size:.92rem;color:#374151;}
+ .ventana-lista{margin:0 0 1.1rem;padding-left:1.15rem;font-size:.9rem;color:var(--gris);}
+ .ventana-lista li{margin-bottom:.3rem;}
+ .ventana-enlace{margin-top:auto;align-self:flex-start;display:inline-block;color:#fff;
+   background:var(--azul);text-decoration:none;font-size:.88rem;font-weight:600;
+   border-radius:8px;padding:.5rem .95rem;transition:background .12s ease;}
+ .ventana-enlace:hover{background:#005B94;}
+ .futuro-fila{max-width:540px;}
+ """
 
 
 def generar_hub() -> None:
     """Genera pagina/index.html (hub) y placeholders para diseños futuros."""
     DIR_PAGINA.mkdir(parents=True, exist_ok=True)
 
-    disenos = [
+    ventanas = [
         {
             "clave": "dca",
             "titulo": "DCA — Diseño completamente al azar",
-            "desc": "Tres técnicas de extracción × 31 aislados de Fusarium a una única concentración (5 mg/mL). "
-                    "Rendimiento de extracción, inhibición micelial y de conidias, susceptibilidad y ranking.",
-            "estado": "activo", "estado_txt": "Disponible", "href": "dca/index.html",
+            "desc": "Tres técnicas de extracción × 31 aislados de Fusarium a una única concentración "
+                    "(5 mg/mL). Comparación del rendimiento de extracción y de la actividad antifúngica.",
+            "puntos": [
+                "Rendimiento de extracción",
+                "%INH de crecimiento micelial",
+                "Esporulación (conidias)",
+                "Susceptibilidad y ranking de aislados",
+            ],
+            "href": "dca/index.html",
         },
         {
             "clave": "bdca",
             "titulo": "BDCA — Bloques completos al azar",
-            "desc": "Análisis con control de la variabilidad entre bloques experimentales (efecto aleatorio): "
-                    "4 tratamientos × 9 bloques, modelo mixto de bloque aleatorio y Tukey HSD.",
-            "estado": "activo", "estado_txt": "Disponible", "href": "bdca/index.html",
+            "desc": "Análisis con control de la variabilidad entre bloques experimentales "
+                    "(efecto aleatorio) mediante modelo mixto.",
+            "puntos": [
+                "Rendimiento (yield)",
+                "4 tratamientos × 9 bloques",
+                "Modelo mixto con bloque aleatorio",
+                "Comparaciones Tukey HSD",
+            ],
+            "href": "bdca/index.html",
         },
+    ]
+    futuros = [
         {
             "clave": "factorial",
             "titulo": "Factorial — Técnica × Concentración × Aislado",
@@ -1924,13 +1956,28 @@ def generar_hub() -> None:
         },
     ]
 
-    tarjetas = "".join(
+    def ventana_html(v) -> str:
+        puntos = "".join(f"<li>{p}</li>" for p in v["puntos"])
+        return f"""<div class="ventana {v['clave']}">
+  <div class="ventana-barra">
+    <h2>{v['titulo']}</h2>
+    <span class="estado activo">Disponible</span>
+  </div>
+  <div class="ventana-cuerpo">
+    <p>{v['desc']}</p>
+    <ul class="ventana-lista">{puntos}</ul>
+    <a class="ventana-enlace" href="{v['href']}">Ver análisis →</a>
+  </div>
+</div>"""
+
+    ventanas_html = "".join(ventana_html(v) for v in ventanas)
+    tarjetas_futuras = "".join(
         f"""<a class="tarjeta {d['estado']}" href="{d['href']}">
   <span class="estado {d['estado']}">{d['estado_txt']}</span>
   <h2>{d['titulo']}</h2>
   <p>{d['desc']}</p>
 </a>"""
-        for d in disenos
+        for d in futuros
     )
 
     html = f"""<!DOCTYPE html>
@@ -1947,7 +1994,10 @@ def generar_hub() -> None:
   <h1>Actividad antifúngica de <em>Thymus vulgaris</em> contra <em>Fusarium</em> spp.</h1>
   <p class="sub">Análisis estadísticos reproducibles de los distintos diseños experimentales del estudio.
   Cada análisis tiene su propia ruta: descriptiva → supuestos → modelos → comparaciones → interpretación.</p>
-  <div class="grid">{tarjetas}</div>
+  <div class="ventanas">{ventanas_html}</div>
+  <div class="futuro-fila">
+    <div class="grid">{tarjetas_futuras}</div>
+  </div>
   <p class="pie">Página generada por <code>generar_pagina.py --hub</code> · Repositorio:
   <a class="pie-enlace" href="https://github.com/marcos-Nieves-24/proyecto-tomillo">proyecto-tomillo</a>.</p>
 </div>
@@ -1956,9 +2006,7 @@ def generar_hub() -> None:
 """
     (DIR_PAGINA / "index.html").write_text(html, encoding="utf-8")
 
-    for d in disenos:
-        if d["estado"] != "futuro":
-            continue
+    for d in futuros:
         sub = DIR_PAGINA / d["clave"]
         sub.mkdir(parents=True, exist_ok=True)
         ph = f"""<!DOCTYPE html>
@@ -1981,8 +2029,8 @@ def generar_hub() -> None:
 """
         (sub / "index.html").write_text(ph, encoding="utf-8")
 
-    futuros = [d["clave"] for d in disenos if d["estado"] == "futuro"]
-    print(f"OK: pagina/index.html (hub) + placeholders {futuros or 'ninguno'} generados.")
+    futuros_clave = [d["clave"] for d in futuros]
+    print(f"OK: pagina/index.html (hub) + placeholders {futuros_clave or 'ninguno'} generados.")
 
 
 if __name__ == "__main__":
