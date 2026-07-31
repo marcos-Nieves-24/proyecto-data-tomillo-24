@@ -992,7 +992,7 @@ def html_flujo() -> str:
 
 def html_tabla_supuestos(df: pd.DataFrame) -> str:
     cols = df.columns.tolist()
-    test_col = "test" if "test" in cols else ("estadistico" if "estadistico" in cols else cols[0])
+    test_col = "test" if "test" in cols else ("supuesto" if "supuesto" in cols else ("estadistico" if "estadistico" in cols else cols[0]))
     est_col = "estadistico" if "estadistico" in cols else None
     p_col = "p_valor" if "p_valor" in cols else None
     int_col = "interpretacion" if "interpretacion" in cols else None
@@ -1096,7 +1096,9 @@ def fig_bdca_medias_ic(des: pd.DataFrame) -> go.Figure:
         ),
         marker_color="#0072B2",
         text=[f"{v:.2f}" for v in df["media"]],
-        textposition="outside",
+        textposition="inside",
+        insidetextanchor="middle",
+        textfont=dict(color="white", size=13, weight="bold"),
         hovertemplate="%{y:.2f}<extra>%{x}</extra>",
     ))
     fig.update_layout(
@@ -1278,13 +1280,14 @@ def main_bdca() -> None:
   <!-- ================= SECCION 2: EL ENSAYO ================= -->
   <section id="desafio" class="seccion ancla">
     <h2 class="seccion-titulo"><span class="num">2</span>El ensayo</h2>
-    <p class="lead">El ensayo de Jenkyn evalúa el control del mildiu (mildeo) mediante
-    tratamientos aplicados a parcelas dispuestas en <strong>bloques completos al azar</strong>.
-    La variabilidad espacial del terreno se controla agrupando las parcelas en 9 bloques,
-    dentro de cada uno de los cuales los 4 tratamientos aparecen una única vez.</p>
-    <p>Con una sola observación por celda tratamiento × bloque, el modelo de bloques no
-    puede estimar el término de interacción: la <strong>aditividad</strong> se documenta como
-    una suposición no testable (AGENTS.md §4.2).</p>
+    <p class="lead">Los datos provienen del ensayo de Jenkyn sobre el control del mildiu (mildeo)
+    en un cultivo, con parcelas dispuestas en <strong>bloques completos al azar</strong>.
+    Se registran 36 parcelas (9 bloques × 4 tratamientos) y la variable respuesta es el
+    <strong>rendimiento (<em>yield</em>)</strong> por parcela, con una observación por celda
+    tratamiento × bloque.</p>
+    <p>Los 4 tratamientos son: <strong>R</strong> (control), <strong>T0</strong>, <strong>T1</strong>
+    y <strong>T2</strong>. La variabilidad espacial del terreno se controla agrupando las parcelas en
+    9 bloques, dentro de cada uno de los cuales los 4 tratamientos aparecen una única vez.</p>
     <div class="que-significa">
       <div class="titulo-tarjeta">Qué significa</div>
       <p>El bloque es la unidad de control de la heterogeneidad espacial: si el ICC es alto,
@@ -1329,10 +1332,10 @@ def main_bdca() -> None:
     <h3 class="sub-seccion">Verificación de supuestos</h3>
     {html_sup}
 
-    <h3 class="sub-seccion">ANOVA clásico de bloques (complemento educativo)</h3>
+    <h3 class="sub-seccion">ANOVA clásico de bloques</h3>
     {html_anova}
 
-    <h3 class="sub-seccion">Modelo mixto lineal (análisis primario)</h3>
+    <h3 class="sub-seccion">Modelo mixto lineal</h3>
     {html_lmm}
     {icc_txt}
 
@@ -1349,8 +1352,8 @@ def main_bdca() -> None:
     <h2 class="seccion-titulo"><span class="num">6</span>Conclusiones</h2>
     <p>La auditoría confirma un diseño RCBD balanceado. La ruta inferencial se eligió tras
     documentar los supuestos (normalidad, homocedasticidad e independencia de residuos).
-    El modelo primario trata el bloque como efecto aleatorio (LMM, REML) y reporta el ICC;
-    el ANOVA clásico de bloques se conserva como complemento educativo. Las comparaciones
+    El modelo trata el bloque como efecto aleatorio (LMM, REML) y reporta el ICC;
+    el ANOVA clásico de bloques complementa la lectura. Las comparaciones
     post-hoc con Tukey HSD interpretan cada par contra la referencia R.</p>
     <div class="que-significa">
       <div class="titulo-tarjeta">Limitaciones</div>
