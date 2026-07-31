@@ -9,8 +9,7 @@ __pycache__/
 .codegraph/
 
 # Artefactos de Windows (ADS)
-*.Zone.Identifier
-:Zone.Identifier
+*:Zone.Identifier
 
 # Entorno
 .env
