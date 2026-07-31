@@ -279,7 +279,9 @@ def fig_barras_rendimiento(rend: pd.DataFrame) -> go.Figure:
             thickness=1.4, width=6, color="#444444",
         ),
         text=[f"{v:.1f}%" for v in df["media"]],
-        textposition="outside",
+        textposition="inside",
+        insidetextanchor="middle",
+        textfont=dict(color="white", size=13, weight="bold"),
         hovertemplate="%{y:.2f}%<extra>%{x}</extra>",
     ))
     fig.update_layout(
@@ -878,11 +880,11 @@ p{margin:.45rem 0;}
   text-transform:uppercase;letter-spacing:.05em;}
 
 table{width:100%;border-collapse:collapse;font-size:.9rem;margin:1rem 0;}
-th,td{border:1px solid var(--borde);padding:.55rem .75rem;text-align:left;
-  vertical-align:top;}
+th,td{border:1px solid var(--borde);padding:.55rem .75rem;text-align:center;
+  vertical-align:middle;}
 th{background:var(--fondo-suave);font-weight:600;}
 tr:nth-child(even) td{background:#FAFBFC;}
-td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;}
+td.num,th.num{text-align:center;font-variant-numeric:tabular-nums;}
 
 .figura{border:1px solid var(--borde);border-radius:10px;background:#fff;
   margin:1.2rem 0;padding:.6rem .6rem .3rem;}
