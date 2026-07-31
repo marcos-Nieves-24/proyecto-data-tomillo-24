@@ -24,18 +24,24 @@ import pandas as pd
 
 RAIZ = Path(__file__).resolve().parent.parent
 
+# Diseno experimental activo. Cada analisis vive en su carpeta (dca/, bdca/,
+# factorial/) con sus propios datos crudos y resultados.
+DISENO = "dca"
+DIR_DISENO = RAIZ / DISENO
+DIR_CRUDOS = RAIZ / "datos_crudos" / DISENO
+
 # Excel crudo del laboratorio: fuente de los controles C4 por aislado (hojas
 # MACERACIÓN, SOXHLET y ULTRASONIDO). No debe modificarse.
-EXCEL_CRUDO = RAIZ / "datos-proyectos tomillo-fusarium.xlsx"
+EXCEL_CRUDO = DIR_CRUDOS / "datos-proyectos tomillo-fusarium.xlsx"
 
-EXCEL_TIDY = RAIZ / "resultados" / "database" / "consolidado_tidy.xlsx"
-CSV_RENDIMIENTO = RAIZ / "resultados" / "database" / "rendimiento_extraccion.csv"
+EXCEL_TIDY = DIR_DISENO / "resultados" / "database" / "consolidado_tidy.xlsx"
+CSV_RENDIMIENTO = DIR_DISENO / "resultados" / "database" / "rendimiento_extraccion.csv"
 
-DIR_DATABASE = RAIZ / "resultados" / "database"
-DIR_TABLAS = RAIZ / "resultados" / "tablas"
-DIR_FIGURAS = RAIZ / "resultados" / "figuras"
-DIR_REPORTES = RAIZ / "resultados" / "reportes"
-DIR_EXCEL = RAIZ / "resultados" / "excel"
+DIR_DATABASE = DIR_DISENO / "resultados" / "database"
+DIR_TABLAS = DIR_DISENO / "resultados" / "tablas"
+DIR_FIGURAS = DIR_DISENO / "resultados" / "figuras"
+DIR_REPORTES = DIR_DISENO / "resultados" / "reportes"
+DIR_EXCEL = DIR_DISENO / "resultados" / "excel"
 
 MASTER_CSV = DIR_DATABASE / "master_dataset_tomillo_fusarium.csv"
 MASTER_XLSX = DIR_DATABASE / "master_dataset_tomillo_fusarium.xlsx"
@@ -140,7 +146,7 @@ def save_figure_pub(fig, nombre, carpeta=None, titulo=None, dpi=DPI):
 
 
 def guardar_tabla(df, nombre, index=True):
-    """Guarda un DataFrame como CSV en ``resultados/tablas``."""
+    """Guarda un DataFrame como CSV en ``dca/resultados/tablas``."""
     ruta = DIR_TABLAS / f"{nombre}.csv"
     df.to_csv(ruta, index=index, encoding="utf-8")
     return ruta

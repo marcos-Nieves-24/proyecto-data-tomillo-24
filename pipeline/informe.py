@@ -146,7 +146,7 @@ def _seccion_resumen(r) -> str:
         "ranking de técnicas."
         + ranking_txt + cluster_txt + "\n\n"
         "Todos los resultados numéricos se guardaron como tablas en "
-        "`resultados/tablas/` y las figuras en `resultados/figuras/`.\n"
+        "`dca/resultados/tablas/` y las figuras en `dca/resultados/figuras/`.\n"
     )
 
 

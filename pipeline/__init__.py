@@ -14,7 +14,7 @@ Paquete importable con un modulo por fase del flujo de trabajo:
 - ranking: ranking de tecnicas de extraccion (fase 11)
 - informe: generacion del informe final (fase 12)
 
-El notebook orquestador ``analisis_pipeline.ipynb`` importa este paquete.
+El notebook orquestador ``dca/analisis_dca.ipynb`` importa este paquete.
 """
 
 __version__ = "1.0.0"

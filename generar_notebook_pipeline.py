@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Genera el notebook orquestador ``analisis_pipeline.ipynb``.
+"""Genera el notebook orquestador ``dca/analisis_dca.ipynb``.
 
 Construye un notebook autocontenido y educativo con nbformat (kernel python3)
 que orquesta las 12 fases de la pipeline reproducible. El código pesado vive
@@ -18,7 +18,7 @@ from pathlib import Path
 import nbformat
 
 RAIZ = Path(__file__).resolve().parent
-SALIDA = RAIZ / "analisis_pipeline.ipynb"
+SALIDA = RAIZ / "dca" / "analisis_dca.ipynb"
 
 
 # ---------------------------------------------------------------------------
@@ -99,10 +99,10 @@ def _md_fase_1() -> str:
     return """## Fase 1: Carga de datos
 
 **Qué se hace**: se leen las dos fuentes de datos de la pipeline:
-- `resultados/database/consolidado_tidy.xlsx` (hoja "Consolidado", 279 filas):
+- `dca/resultados/database/consolidado_tidy.xlsx` (hoja "Consolidado", 279 filas):
   bioensayo con crecimiento micelial (mm), % de inhibición micelial, conidias
   (log10/mL) e inhibición de conidias para cada técnica × aislado × réplica.
-- `resultados/database/rendimiento_extraccion.csv` (9 filas): rendimiento de
+- `dca/resultados/database/rendimiento_extraccion.csv` (9 filas): rendimiento de
   extracción por técnica y réplica biológica.
 
 **Por qué**: se usa el dataset consolidado y limpio (no el Excel crudo) como
@@ -412,13 +412,13 @@ ranking pero no diferir significativamente de la segunda).
 def _md_fase_12() -> str:
     return """## Fase 12: Informe final
 
-**Qué se hace**: se genera `resultados/reportes/informe_final.md` (español
+**Qué se hace**: se genera `dca/resultados/reportes/informe_final.md` (español
 profesional y neutro) con las secciones: resumen ejecutivo, calidad de datos,
 diseño experimental, supuestos, análisis seleccionados y su justificación,
 comparaciones múltiples, análisis multivariado, ranking, interpretación
 biológica, conclusiones y limitaciones. Luego se convierte a
 `informe_final.html` con un CSS simple y legible. Además se exporta un libro
-Excel de resumen (`resultados/excel/resumen_analisis.xlsx`) con las hojas
+Excel de resumen (`dca/resultados/excel/resumen_analisis.xlsx`) con las hojas
 Descriptivos, Rendimiento (ANOVA), Factorial, Posthoc, Ranking y
 Susceptibilidad.
 
@@ -458,11 +458,12 @@ La pipeline está diseñada para reutilizarse sin modificar la lógica:
 4. **Revisar la validación** de la fase 3: si las dimensiones o el balanceo
    cambian, la validación lanzará un error y habrá que decidir cómo proceder
    (el pipeline nunca imputa datos ni elimina atípicos automáticamente).
-5. **Controles y validación**: si el Excel crudo (`datos-proyectos
-   tomillo-fusarium.xlsx`) no está presente, los controles C4 se omiten y la
-   validación del %INH se saltea con un aviso; la inferencia no se ve afectada.
+5. **Controles y validación**: si el Excel crudo
+   (`datos_crudos/dca/datos-proyectos tomillo-fusarium.xlsx`) no está presente,
+   los controles C4 se omiten y la validación del %INH se saltea con un aviso;
+   la inferencia no se ve afectada.
 
-Los resultados se escriben siempre en `resultados/` (tablas, figuras,
+Los resultados se escriben siempre en `dca/resultados/` (tablas, figuras,
 reportes y Excel), sin tocar los datos fuente.
 """
 
@@ -672,7 +673,7 @@ def _md_pie() -> str:
 - Las limitaciones principales (control compartido, %INH de conidias en escala
   log10 y ausencia de dosis-respuesta) están documentadas en la sección 10 del
   informe final.
-- Todos los archivos generados quedan en `resultados/`; el notebook solo
+- Todos los archivos generados quedan en `dca/resultados/`; el notebook solo
   orquesta la ejecución.
 """
 

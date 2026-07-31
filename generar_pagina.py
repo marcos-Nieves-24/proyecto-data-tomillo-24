@@ -1,10 +1,17 @@
 """Genera la pagina interactiva de storytelling del estudio tomillo x Fusarium.
 
-Lee los datos del master dataset y las tablas de ``resultados/`` y produce
-``pagina/index.html``: una pagina estatica autocontenida con figuras Plotly
-interactivas (CDN, sin servidor) lista para GitHub Pages.
+Lee los datos del master dataset y las tablas de ``<diseno>/resultados/`` y
+produce ``pagina/<diseno>/index.html``: una pagina estatica autocontenida con
+figuras Plotly interactivas (CDN, sin servidor) lista para Vercel/GitHub Pages.
 
-Solo lee de ``pipeline/`` y ``resultados/``; no escribe fuera de ``pagina/``.
+Modos de uso:
+
+    python3 generar_pagina.py                    # pagina del DCA
+    python3 generar_pagina.py --diseno dca       # idem, explicito
+    python3 generar_pagina.py --hub              # hub + placeholders BDCA/factorial
+
+Solo lee de ``pipeline/`` y ``<diseno>/resultados/``; no escribe fuera de
+``pagina/``.
 """
 
 from __future__ import annotations
@@ -22,10 +29,13 @@ import scipy.cluster.hierarchy as sch
 from plotly.subplots import make_subplots
 
 RAIZ = Path(__file__).resolve().parent
-DIR_RESULTADOS = RAIZ / "resultados"
+DISENO = "dca"
+DIR_DISENO = RAIZ / DISENO
+DIR_RESULTADOS = DIR_DISENO / "resultados"
 DIR_TABLAS = DIR_RESULTADOS / "tablas"
 DIR_DATABASE = DIR_RESULTADOS / "database"
 DIR_PAGINA = RAIZ / "pagina"
+DIR_PAGINA_DISENO = DIR_PAGINA / DISENO
 
 MASTER_CSV = DIR_DATABASE / "master_dataset_tomillo_fusarium.csv"
 REND_CSV = DIR_DATABASE / "rendimiento_extraccion.csv"
@@ -125,7 +135,7 @@ def es_p(p, dec: int = 3) -> str:
 
 
 def leer_tabla(nombre: str, **kw) -> pd.DataFrame | None:
-    """Lee una tabla de resultados/tablas; devuelve None si no existe."""
+    """Lee una tabla de <diseno>/resultados/tablas; devuelve None si no existe."""
     ruta = DIR_TABLAS / f"{nombre}.csv"
     if not ruta.exists():
         return None
@@ -815,6 +825,7 @@ nav.fijo .marca{font-weight:700;color:var(--azul);letter-spacing:.02em;}
 nav.fijo a.enlace{color:var(--gris);font-size:.85rem;padding:.25rem .15rem;}
 nav.fijo a.enlace:hover{color:var(--azul);text-decoration:none;}
 nav.fijo a.enlace.activo{color:var(--azul);border-bottom:2px solid var(--azul);}
+nav.fijo a.enlace.vuelta{color:var(--azul);font-weight:700;}
 
 .contenido{max-width:1120px;margin:0 auto;padding:0 1.4rem 4rem;}
 
@@ -1116,15 +1127,19 @@ def main() -> None:
 
     # ------------------------------------------------------------------ HTML
     css = CSS
-    nav = "".join(
-        f'<a class="enlace" href="#{seccion}">{etiqueta}</a>'
-        for seccion, etiqueta in [
-            ("hero", "Resumen"), ("desafio", "El desafío"), ("diseno", "Diseño"),
-            ("ruta", "Ruta estadística"), ("bloque-rendimiento", "Rendimiento"),
-            ("bloque-inhibicion", "Inhibición"), ("bloque-esporulacion", "Esporulación"),
-            ("bloque-susceptibilidad", "Susceptibilidad"), ("ranking", "Ranking"),
-            ("conclusiones", "Conclusiones"), ("metodologia", "Metodología"),
-        ]
+    vuelta_hub = "../index.html"
+    nav = (
+        f'<a class="enlace vuelta" href="{vuelta_hub}" title="Volver al índice de análisis">← Análisis</a>'
+        + "".join(
+            f'<a class="enlace" href="#{seccion}">{etiqueta}</a>'
+            for seccion, etiqueta in [
+                ("hero", "Resumen"), ("desafio", "El desafío"), ("diseno", "Diseño"),
+                ("ruta", "Ruta estadística"), ("bloque-rendimiento", "Rendimiento"),
+                ("bloque-inhibicion", "Inhibición"), ("bloque-esporulacion", "Esporulación"),
+                ("bloque-susceptibilidad", "Susceptibilidad"), ("ranking", "Ranking"),
+                ("conclusiones", "Conclusiones"), ("metodologia", "Metodología"),
+            ]
+        )
     )
 
     hero_cifras = "".join(
@@ -1488,11 +1503,11 @@ def main() -> None:
     <p>Todos los resultados de esta página se generan a partir de una pipeline reproducible en Python
     (semilla 42), sin pasos manuales:</p>
     <ul>
-      <li><strong>Notebook orquestador</strong>: <code>analisis_pipeline.ipynb</code> — ejecuta la pipeline
+      <li><strong>Notebook orquestador</strong>: <code>{DISENO}/analisis_dca.ipynb</code> — ejecuta la pipeline
       completa de forma reproducible.</li>
-      <li><strong>Informe final</strong>: <code>resultados/reportes/informe_final.md</code> (y su versión
+      <li><strong>Informe final</strong>: <code>{DISENO}/resultados/reportes/informe_final.md</code> (y su versión
       HTML) con la narrativa técnica completa.</li>
-      <li><strong>Master dataset</strong>: <code>resultados/database/master_dataset_tomillo_fusarium.csv</code>
+      <li><strong>Master dataset</strong>: <code>{DISENO}/resultados/database/master_dataset_tomillo_fusarium.csv</code>
       — 279 filas × 9 columnas (3 métodos × 31 aislados × 3 réplicas).</li>
       <li><strong>Validación de %INH</strong>: las {es_num(n_verif, 0)} unidades fueron verificadas contra la
       fórmula (1 − C1/C4) × 100 con {es_num(n_disc, 0)} discrepancias.</li>
@@ -1510,21 +1525,142 @@ def main() -> None:
 <footer>
   <div class="interno">
     <p>Actividad antifúngica de extractos de <em>Thymus vulgaris</em> contra <em>Fusarium</em> spp. ·
-    Página generada automáticamente por <code>generar_pagina.py</code> · Datos:
-    <code>resultados/database/master_dataset_tomillo_fusarium.csv</code> · Figuras interactivas con Plotly.js.</p>
+    Análisis <strong>DCA</strong> · Página generada automáticamente por <code>generar_pagina.py</code> · Datos:
+    <code>{DISENO}/resultados/database/master_dataset_tomillo_fusarium.csv</code> · Figuras interactivas con Plotly.js.</p>
   </div>
 </footer>
 </body>
 </html>
 """
 
-    DIR_PAGINA.mkdir(parents=True, exist_ok=True)
-    (DIR_PAGINA / "index.html").write_text(html, encoding="utf-8")
+    DIR_PAGINA_DISENO.mkdir(parents=True, exist_ok=True)
+    (DIR_PAGINA_DISENO / "index.html").write_text(html, encoding="utf-8")
 
     n_fig = len(f)
-    print(f"OK: pagina/index.html generada con {n_fig} figuras Plotly.")
+    print(f"OK: pagina/{DISENO}/index.html generada con {n_fig} figuras Plotly.")
     print(f"Tamaño: {sum(len(v) for v in f.values()) / 1024:.0f} KB de figuras embebidas.")
 
 
+CSS_HUB = """
+:root{--azul:#0072B2;--naranja:#D55E00;--verde:#009E73;--ambar:#F0E442;
+  --gris:#5A5A5A;--borde:#E5E5E5;--fondo-suave:#F7F9FB;--tinta:#1F2933;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,
+  Helvetica,Arial,sans-serif;color:var(--tinta);background:#fff;line-height:1.6;}
+.contenido{max-width:1040px;margin:0 auto;padding:3rem 1.4rem 4rem;}
+h1{font-size:2.1rem;line-height:1.2;margin:0 0 .4rem;letter-spacing:-.01em;}
+p.sub{font-size:1.1rem;color:var(--gris);max-width:760px;margin:0 0 2.2rem;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.2rem;}
+.tarjeta{border:1px solid var(--borde);border-top:4px solid var(--azul);border-radius:12px;
+  padding:1.2rem 1.3rem;text-decoration:none;color:inherit;display:block;background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.05);transition:transform .12s ease,box-shadow .12s ease;}
+.tarjeta:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.08);}
+.tarjeta.oculta{border-top-color:var(--gris);opacity:.75;}
+.tarjeta h2{margin:0 0 .35rem;font-size:1.15rem;color:var(--azul);}
+.tarjeta.oculta h2{color:var(--gris);}
+.tarjeta p{margin:0 0 .5rem;font-size:.92rem;color:#374151;}
+.estado{display:inline-block;font-size:.75rem;font-weight:700;border-radius:999px;
+  padding:.18rem .6rem;margin-bottom:.6rem;}
+.estado.activo{background:#E3F2E9;color:#1B7A43;}
+.estado.futuro{background:#F2F3F5;color:#6B7280;}
+.pie{color:var(--gris);font-size:.85rem;margin-top:2.4rem;}
+a.pie-enlace{color:var(--azul);text-decoration:none;}
+"""
+
+
+def generar_hub() -> None:
+    """Genera pagina/index.html (hub) y los placeholders BDCA y factorial."""
+    DIR_PAGINA.mkdir(parents=True, exist_ok=True)
+
+    disenos = [
+        {
+            "clave": "dca",
+            "titulo": "DCA — Diseño completamente al azar",
+            "desc": "Tres técnicas de extracción × 31 aislados de Fusarium a una única concentración (5 mg/mL). "
+                    "Rendimiento de extracción, inhibición micelial y de conidias, susceptibilidad y ranking.",
+            "estado": "activo", "estado_txt": "Disponible", "href": "dca/index.html",
+        },
+        {
+            "clave": "bdca",
+            "titulo": "BDCA — Bloques completos al azar",
+            "desc": "Análisis con control de la variabilidad entre bloques experimentales (efecto aleatorio).",
+            "estado": "futuro", "estado_txt": "Próximamente", "href": "bdca/index.html",
+        },
+        {
+            "clave": "factorial",
+            "titulo": "Factorial — Técnica × Concentración × Aislado",
+            "desc": "Múltiples concentraciones, interacciones factoriales y dosis-respuesta (EC50/EC90).",
+            "estado": "futuro", "estado_txt": "Próximamente", "href": "factorial/index.html",
+        },
+    ]
+
+    tarjetas = "".join(
+        f"""<a class="tarjeta {d['estado']}" href="{d['href']}">
+  <span class="estado {d['estado']}">{d['estado_txt']}</span>
+  <h2>{d['titulo']}</h2>
+  <p>{d['desc']}</p>
+</a>"""
+        for d in disenos
+    )
+
+    html = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Análisis estadísticos de la actividad antifúngica de Thymus vulgaris contra Fusarium spp. — DCA, BDCA y diseño factorial.">
+<title>Tomillo × Fusarium — Análisis estadísticos</title>
+<style>{CSS_HUB}</style>
+</head>
+<body>
+<div class="contenido">
+  <h1>Actividad antifúngica de <em>Thymus vulgaris</em> contra <em>Fusarium</em> spp.</h1>
+  <p class="sub">Análisis estadísticos reproducibles de los distintos diseños experimentales del estudio.
+  Cada análisis tiene su propia ruta: descriptiva → supuestos → modelos → comparaciones → interpretación.</p>
+  <div class="grid">{tarjetas}</div>
+  <p class="pie">Página generada por <code>generar_pagina.py --hub</code> · Repositorio:
+  <a class="pie-enlace" href="https://github.com/marcos-Nieves-24/proyecto-tomillo">proyecto-tomillo</a>.</p>
+</div>
+</body>
+</html>
+"""
+    (DIR_PAGINA / "index.html").write_text(html, encoding="utf-8")
+
+    for d in disenos[1:]:
+        sub = DIR_PAGINA / d["clave"]
+        sub.mkdir(parents=True, exist_ok=True)
+        ph = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{d['titulo']} — Próximamente</title>
+<style>{CSS_HUB}</style>
+</head>
+<body>
+<div class="contenido">
+  <p><a class="pie-enlace" href="../index.html">← Volver al índice de análisis</a></p>
+  <h1>{d['titulo']}</h1>
+  <p class="sub">Este análisis se encuentra en preparación. Cuando estén disponibles los datos del diseño,
+  esta página mostrará los resultados completos con el mismo estándar que el análisis DCA.</p>
+</div>
+</body>
+</html>
+"""
+        (sub / "index.html").write_text(ph, encoding="utf-8")
+
+    print("OK: pagina/index.html (hub) + placeholders bdca/ y factorial/ generados.")
+
+
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Genera la pagina interactiva del estudio.")
+    parser.add_argument("--hub", action="store_true", help="genera el hub y los placeholders")
+    parser.add_argument("--diseno", choices=["dca"], default="dca", help="analisis a generar")
+    args = parser.parse_args()
+
+    if args.hub:
+        generar_hub()
+    else:
+        main()

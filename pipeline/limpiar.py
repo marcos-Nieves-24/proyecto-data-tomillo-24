@@ -219,8 +219,8 @@ def guardar_master(df_bio: pd.DataFrame, df_rend: pd.DataFrame) -> tuple:
     lineas = [
         "# Diccionario de datos - Master dataset (pipeline reproducible)",
         "",
-        "Fuente: resultados/database/consolidado_tidy.xlsx (hoja 'Consolidado') y",
-        "resultados/database/rendimiento_extraccion.csv.",
+        "Fuente: dca/resultados/database/consolidado_tidy.xlsx (hoja 'Consolidado') y",
+        "dca/resultados/database/rendimiento_extraccion.csv.",
         "",
         "## Hoja Bioensayo",
         "",
@@ -254,7 +254,7 @@ def guardar_master(df_bio: pd.DataFrame, df_rend: pd.DataFrame) -> tuple:
         "- Cada %INH se calculó contra un control C4 compartido por las 3 réplicas",
         "  del aislado (pseudorreplicación del control; ver limitaciones).",
         "- Las columnas control_* se extraen del Excel crudo del laboratorio",
-        "  (datos-proyectos tomillo-fusarium.xlsx, hojas por técnica) y se propagan",
+        "  (datos_crudos/dca/datos-proyectos tomillo-fusarium.xlsx, hojas por técnica) y se propagan",
         "  a las 3 réplicas de cada aislado.",
         "",
     ]
@@ -306,7 +306,7 @@ def validar_inh(master: pd.DataFrame) -> dict:
     verificado contra los valores reportados.
 
     Devuelve un dict con estado 'ok' / 'discrepancias' / 'no_disponible' y
-    guarda ``resultados/tablas/validacion_inh.csv``.
+    guarda ``dca/resultados/tablas/validacion_inh.csv``.
     """
     if not CONTROLES_DISPONIBLES or not all(
         c in master.columns for c in COLUMNAS_CONTROL

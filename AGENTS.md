@@ -157,7 +157,11 @@ The statistical unit of inference should normally be the biological experimental
 
 The source Excel file is:
 
-datos-proyectos tomillo-fusarium.xlsx
+datos_crudos/dca/datos-proyectos tomillo-fusarium.xlsx
+
+Each experimental design lives in its own folder (dca/, bdca/, factorial/),
+with raw data under datos_crudos/<design>/ and outputs under
+<design>/resultados/ (database, tablas, figuras, reportes, excel).
 
 Preserve the original file.
 
