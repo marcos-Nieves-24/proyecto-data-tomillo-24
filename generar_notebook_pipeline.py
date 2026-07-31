@@ -18,7 +18,8 @@ from pathlib import Path
 import nbformat
 
 RAIZ = Path(__file__).resolve().parent
-SALIDA = RAIZ / "dca" / "analisis_dca.ipynb"
+SALIDA_DCA = RAIZ / "dca" / "analisis_dca.ipynb"
+SALIDA_BDCA = RAIZ / "bdca" / "analisis_bdca.ipynb"
 
 
 # ---------------------------------------------------------------------------
@@ -110,7 +111,7 @@ fuente única de entrada; esto garantiza trazabilidad.
 
 **Cómo interpretar**: se verifica que las dimensiones coincidan con lo esperado
 (279 y 9 filas) y se inspeccionan columnas, tipos y primeras filas antes de
-cualquier transformación.
+ cualquier transformación.
 """
 
 
@@ -192,9 +193,9 @@ como 100 cuando C1=0 y como indefinido (NaN) cuando C1>0; en los datos reales
 el control nunca es 0.
 
 **Cómo interpretar**: si el estado es 'ok' (sin discrepancias por encima de la
-tolerancia 1e-6), la fórmula del laboratorio es consistente con los datos; si
-hubiera discrepancias, habría que investigar si se deben a escala (log10 vs
-crudo) o a redondeo antes de reportar.
+ tolerancia 1e-6), la fórmula del laboratorio es consistente con los datos; si
+ hubiera discrepancias, habría que investigar si se deben a escala (log10 vs
+ crudo) o a redondeo antes de reportar.
 """
 
 
@@ -227,8 +228,8 @@ def _md_fase_5() -> str:
     return """## Fase 5: Diseño experimental
 
 **Qué se hace**: se infiere y documenta el diseño: DCA factorial
-técnica × aislado, 3 réplicas biológicas, unidad experimental (caja Petri),
-concentración única (5 mg/mL) y balanceo.
+ técnica × aislado, 3 réplicas biológicas, unidad experimental (caja Petri),
+ concentración única (5 mg/mL) y balanceo.
 
 **Por qué**: conocer el diseño determina la estructura del modelo (factores
 fijos/aleatorios, interacciones) y las limitaciones de la inferencia.
@@ -254,8 +255,8 @@ factorial `variable ~ método * aislado` y se evalúa:
 - **Normalidad** de residuos (Shapiro-Wilk),
 - **Homocedasticidad** entre métodos (Levene y Bartlett),
 - **Independencia** (estadístico de Durbin-Watson),
-y se generan figuras de diagnóstico (histograma, QQ-plot, residuos vs
-ajustados, residuos por método).
+  y se generan figuras de diagnóstico (histograma, QQ-plot, residuos vs
+  ajustados, residuos por método).
 
 **Por qué**: el ANOVA factorial exige residuos normales, homocedásticos e
 independientes; si no se cumplen, la inferencia debe apoyarse en la vía no
@@ -278,23 +279,23 @@ def _md_fase_7() -> str:
 
 **Qué se hace**:
 1. **Rendimiento**: ANOVA de una vía (OLS) `rendimiento_pct ~ método` con
-   tabla tipo II, eta², omega² y supuestos; si fallan, se complementa con
-   Kruskal-Wallis.
+tabla tipo II, eta², omega² y supuestos; si fallan, se complementa con
+Kruskal-Wallis.
 2. **Factorial por variable**: se ajusta `variable ~ método * aislado` con
-   ANOVA tipo II y tamaños de efecto (eta² y omega² parciales). La selección
-   de la vía de inferencia es **automática y justificada**:
+ANOVA tipo II y tamaños de efecto (eta² y omega² parciales). La selección
+de la vía de inferencia es **automática y justificada**:
    - Si la variable es un **conteo entero >= 0 sobredisperso** -> rama GLM
      Poisson/Binomial negativa (función `glm_conteos`, documentada).
    - Si es continua y los supuestos se cumplen -> tabla F del ANOVA.
    - Si los supuestos fallan -> vía no paramétrica: Kruskal-Wallis por método
      + Scheirer-Ray-Hare (ANOVA tipo II sobre rangos) para la interacción.
 3. **Sensibilidad LMM**: `variable ~ método + (1|aislamiento)` (modelo mixto
-   con aislado aleatorio) para evaluar si la conclusión sobre el método es
-   robusta; se reporta el ICC (proporción de varianza atribuible al aislado).
+con aislado aleatorio) para evaluar si la conclusión sobre el método es
+robusta; se reporta el ICC (proporción de varianza atribuible al aislado).
 4. **Conidias**: diagnóstico de que `conidias_log10_ml` es continua (no
-   entera), lo que **desactiva la rama Poisson/NB** (los conteos crudos no
-   están disponibles y la escala ya es log10); se usa modelo lineal sobre
-   log10.
+entera), lo que **desactiva la rama Poisson/NB** (los conteos crudos no
+están disponibles y la escala ya es log10); se usa modelo lineal sobre
+log10.
 
 **Por qué**: la filosofía del proyecto es NO elegir un test solo por producir
 significancia; la elección se justifica con diagnóstico de datos.
@@ -317,8 +318,8 @@ def _md_fase_8() -> str:
 en la fase 7:
 - Si el modelo fue paramétrico (ANOVA) -> **Tukey HSD** entre métodos.
 - Si fue no paramétrico -> **test de Dunn** (manual, sobre rangos) con
-  corrección **FDR** (Benjamini-Hochberg) y **Wilcoxon/Mann-Whitney** con FDR
-  como robustez.
+corrección **FDR** (Benjamini-Hochberg) y **Wilcoxon/Mann-Whitney** con FDR
+como robustez.
 Se generan **letras compactas (CLD)**: métodos que comparten al menos una letra
 NO difieren significativamente (p ajustada >= 0.05). Se guardan tablas y la
 figura `posthoc_<variable>_letras`.
@@ -468,13 +469,70 @@ reportes y Excel), sin tocar los datos fuente.
 """
 
 
-# ---------------------------------------------------------------------------
-# Celdas de código
-# ---------------------------------------------------------------------------
+def _md_pie() -> str:
+    return """### Nota final sobre interpretación
+
+- **Significancia estadística** (p < 0.05) no implica **relevancia biológica**;
+  siempre se evalúan junto con el tamaño de efecto y los IC95%.
+- Las limitaciones principales (control compartido, %INH de conidias en escala
+  log10 y ausencia de dosis-respuesta) están documentadas en la sección 10 del
+  informe final.
+- Todos los archivos generados quedan en `dca/resultados/`; el notebook solo
+  orquesta la ejecución.
+"""
 
 
-def _code_setup() -> str:
-    return '''
+def _md_bdca_titulo() -> str:
+    return """# Pipeline reproducible de análisis estadístico (BDCA)
+
+## Diseño de bloques completos al azar (RCBD): rendimiento de cultivares frente a mildiu
+
+Este notebook es el **orquestador educativo** del análisis del ensayo de bloques
+completos al azar (RCBD) de **una sola respuesta**: el rendimiento (`yield`).
+
+### Contexto del ensayo
+
+- **Fuente**: `datos_crudos/bdca/DBCA_Jenkyn_control_mildeo.csv`
+- **Estructura**: 36 observaciones = 4 tratamientos (R, T0, T1, T2) × 9 bloques (B1-B9).
+- **Unidad experimental**: una parcela por celda tratamiento × bloque (una sola observación por celda).
+- **Variables**: `plot`, `trt`, `block`, `yield`.
+
+### Objetivos científicos
+
+1. **Rendimiento**: comparar el rendimiento (`yield`) entre los 4 tratamientos, controlando el efecto de bloque.
+2. **Inferencia rigurosa**: verificar supuestos antes de elegir el modelo (ANOVA clásico como complemento educativo y modelo mixto lineal con bloque aleatorio como análisis primario).
+3. **Comparaciones**: contrastar cada tratamiento contra la referencia R con Tukey HSD.
+4. **Reproducibilidad**: todo el análisis es re-ejecutable con datos nuevos.
+
+### Estructura del análisis
+
+| Fase | Módulo | Contenido |
+|------|--------|-----------|
+| 1 | `cargar` | Carga y auditoría de calidad |
+| 2 | `eda` | Exploración descriptiva (medias, IC95%, figuras) |
+| 3 | `supuestos` | Verificación de supuestos del modelo de bloques |
+| 4 | `modelos` | ANOVA clásico de bloques (educativo) |
+| 5 | `modelos` | Modelo mixto lineal con bloque aleatorio (ICC) |
+| 6 | `comparaciones` | Tukey HSD con interpretación vs referencia R |
+| 7 | `informe` | Informe final (MD/HTML/Excel) |
+"""
+
+
+def _md_bdca_setup() -> str:
+    return """## Configuración del entorno
+
+Esta celda prepara el entorno: determina la raíz del proyecto, agrega el
+paquete `pipeline/` al `sys.path` y fija la semilla aleatoria global (42) para
+garantizar la reproducibilidad de los procedimientos estocásticos.
+
+**Por qué una semilla fija**: cualquier procedimiento con inicialización
+aleatoria produce resultados ligeramente distintos entre ejecuciones. Fijar
+la semilla hace que el análisis sea determinista.
+"""
+
+
+def _code_bdca_setup() -> str:
+    return """
 import os
 import sys
 import warnings
@@ -495,29 +553,249 @@ import numpy as np
 import pandas as pd
 from IPython.display import display, Markdown
 
-from pipeline.config import (
-    fijar_semilla, METODOS, METODO_LABEL, VARIABLES_RESPUESTA, VARIABLE_LABEL,
-)
-from pipeline import (
-    cargar_datos, limpiar, eda, diseno, supuestos, modelos, comparaciones,
-    visualizar, multivariado, ranking, informe,
+from pipeline.config import fijar_semilla, guardar_tabla
+from pipeline.bdca import (
+    cargar, resumen_descriptivo, figuras_eda, analisis_supuestos,
+    anova_bloques, lmm_bloques, posthoc_tukey, informe_completo,
 )
 
 fijar_semilla(42)
 
 print("Versión de librerías:")
 import importlib
-for nombre in ("pandas", "numpy", "scipy", "statsmodels", "sklearn", "pingouin", "matplotlib", "seaborn"):
+for nombre in ("pandas", "numpy", "scipy", "statsmodels", "matplotlib", "seaborn"):
     try:
         mod = importlib.import_module(nombre)
         print(f"  {nombre} {mod.__version__}")
     except Exception as exc:  # pragma: no cover
         print(f"  {nombre}: {exc}")
+"""
 
-# Diccionario acumulador de resultados para el informe final
-resultados = {}
-print("\\nRaíz del proyecto:", RAIZ)
-'''
+
+def _md_bdca_fase_1() -> str:
+    return """## Fase 1: Carga de datos y auditoría de calidad
+
+**Qué se hace**: se carga `datos_crudos/bdca/DBCA_Jenkyn_control_mildeo.csv`
+(36 filas: `plot, trt, block, yield`) y se audita el diseño RCBD: una
+observación por celda tratamiento × bloque, 9 por tratamiento (R/T0/T1/T2),
+4 por bloque (B1-B9), sin valores faltantes ni duplicados.
+
+**Por qué**: la auditoría previa es obligatoria para detectar cualquier
+problema de integridad antes del análisis (regla del proyecto: anomalías se
+reportan, nunca se imputan).
+
+**Cómo interpretar**: si `auditado_ok` es True, el diseño está balanceado y se
+puede proceder. Si no, las anomalías quedan registradas en la tabla de
+auditoría y deben resolverse antes de la inferencia.
+"""
+
+
+def _code_bdca_fase_1() -> str:
+    return """
+df, auditoria = cargar()
+display(Markdown("### Resumen de auditoría"))
+print(f"Filas: {auditoria['total_filas']}, duplicados: {auditoria['filas_duplicadas']}, NA: {auditoria['filas_con_na']}")
+print(f"Tratamientos: {auditoria['conteo_por_trt']}")
+print(f"Bloques: {auditoria['conteo_por_block']}")
+print(f"Balance OK: {auditoria['auditado_ok']}")
+display(df.head())
+"""
+
+
+def _md_bdca_fase_2() -> str:
+    return """## Fase 2: Exploración descriptiva (EDA)
+
+**Qué se hace**: para cada tratamiento se calculan estadísticas descriptivas
+(n, media, desviación estándar, error estándar, IC95%, mínimo, máximo) y se
+generan figuras exploratorias: boxplot, histogramas y QQ-plot por tratamiento.
+
+**Por qué**: el EDA revela la forma de las distribuciones, la variabilidad
+entre tratamientos y posibles valores atípicos, orientando la elección del
+modelo (regla del proyecto: inspeccionar antes de modelar).
+
+**Cómo interpretar**:
+- Medias con IC95% superpuestos sugieren diferencias débiles entre tratamientos.
+- Asimetrías o colas pesadas en histogramas/QQ-plot alertan sobre desviaciones
+  de la normalidad que la fase de supuestos formalizará.
+"""
+
+
+def _code_bdca_fase_2() -> str:
+    return """
+descriptivos = resumen_descriptivo(df)
+display(Markdown("### Descriptivos por tratamiento"))
+display(descriptivos)
+
+fig_paths_eda = figuras_eda(df)
+print("Figuras EDA generadas:", len(fig_paths_eda))
+"""
+
+
+def _md_bdca_fase_3() -> str:
+    return """## Fase 3: Verificación de supuestos
+
+**Qué se hace**: se ajusta el modelo de bloques `yield ~ C(trt) + C(block)` y
+se evalúa sobre sus residuos:
+- **Normalidad**: Shapiro-Wilk (p > 0.05 → no hay evidencia de desviación).
+- **Homocedasticidad**: Levene entre tratamientos (p > 0.05 → varianzas comparables).
+- **Independencia**: estadístico de Durbin-Watson (≈ 2 → sin autocorrelación serial).
+
+**Por qué**: la regla del proyecto exige documentar los supuestos y sus
+consecuencias antes de elegir la ruta de inferencia; no se selecciona un test
+solo porque produzca significancia.
+
+**Cómo interpretar**:
+- Si los tres supuestos se cumplen → ruta paramétrica (ANOVA/LMM).
+- Si alguno falla → ruta no paramétrica como inferencia principal, conservando
+  el ANOVA como referencia descriptiva.
+"""
+
+
+def _code_bdca_fase_3() -> str:
+    return """
+resultado_supuestos = analisis_supuestos(df)
+display(Markdown(f"### Decisión: {resultado_supuestos['tipo_modelo'].upper()}"))
+display(resultado_supuestos["tabla_supuestos"])
+print(resultado_supuestos["justificacion"])
+"""
+
+
+def _md_bdca_fase_4() -> str:
+    return """## Fase 4: ANOVA clásico de bloques RCBD (complemento educativo)
+
+**Qué se hace**: se ajusta el modelo OLS `yield ~ C(trt) + C(block)` y se
+reporta la tabla ANOVA tipo II con tamaños de efecto (eta² parcial) para el
+tratamiento y el bloque.
+
+**Por qué**: el ANOVA de bloques es el modelo clásico de referencia para RCBD.
+Dado que hay una sola observación por celda, **no** se puede estimar el término
+de interacción: la aditividad es una suposición no testable.
+
+**Cómo interpretar**:
+- Un p < 0.05 en `tratamiento` indica diferencias entre tratamientos.
+- eta² parcial cuantifica la magnitud: p significativo con eta² pequeño no es
+  biológicamente relevante.
+"""
+
+
+def _code_bdca_fase_4() -> str:
+    return """
+resultado_anova = anova_bloques(df)
+display(resultado_anova["tabla_anova"])
+"""
+
+
+def _md_bdca_fase_5() -> str:
+    return """## Fase 5: Modelo mixto lineal con bloque aleatorio (análisis primario)
+
+**Qué se hace**: se ajusta el modelo mixto lineal `yield ~ C(trt)` con bloque
+aleatorio `(1|block)` por REML, reportando efectos fijos (coeficientes, error
+estándar, t, p-valor, IC95%) y las varianzas de bloque y residual junto con el
+**coeficiente de correlación intraclase (ICC)**.
+
+**Por qué**: el LMM trata el bloque como un efecto aleatorio, reflejando que
+los 9 bloques son una muestra de la variabilidad espacial del ensayo. Es el
+análisis primario del diseño RCBD.
+
+**Cómo interpretar**:
+- Un ICC alto indica que el bloque explica gran parte de la variación total.
+- La limitación de aditividad se documenta explícitamente (una observación por
+  celda → no se puede probar la interacción).
+"""
+
+
+def _code_bdca_fase_5() -> str:
+    return """
+resultado_lmm = lmm_bloques(df)
+display(resultado_lmm["tabla_fija"])
+print(f"Varianza de bloque = {resultado_lmm['var_bloque']:.4f}")
+print(f"Varianza residual = {resultado_lmm['var_residual']:.4f}")
+print(f"ICC = {resultado_lmm['icc']:.4f}")
+display(Markdown(resultado_lmm["limitacion_aditividad"]))
+"""
+
+
+def _md_bdca_fase_6() -> str:
+    return """## Fase 6: Comparaciones múltiples post-hoc (Tukey HSD)
+
+**Qué se hace**: se comparan los tratamientos por pares con **Tukey HSD**
+(6 pares), reportando diferencia de medias, p ajustado, IC95% y una columna
+`vs_referencia_R` que marca explícitamente los contrastes contra el control R.
+Se guarda además el Tukey plot (`posthoc_tukey_pares`).
+
+**Por qué**: comparar todos los pares sin corregir infla el error tipo I; Tukey
+HSD controla la tasa de error familiar. La referencia R es el control del
+ensayo, por lo que sus contrastes tienen interpretación biológica directa.
+
+**Cómo interpretar**:
+- Un par con `significativo=True` difiere al nivel 0.05 ajustado.
+- La dirección del efecto se lee en `diferencia_medias` (positiva → el primer
+  tratamiento supera al segundo).
+"""
+
+
+def _code_bdca_fase_6() -> str:
+    return """
+resultado_posthoc = posthoc_tukey(df)
+display(resultado_posthoc)
+"""
+
+
+def _md_bdca_fase_7() -> str:
+    return """## Fase 7: Informe final
+
+**Qué se hace**: se genera el informe unificado (Markdown + HTML) que integra
+todas las secciones anteriores y documenta las variables derivadas con su
+fuente, fórmula y razón, y se exporta el resumen a Excel.
+
+**Por qué**: el proyecto exige que cada variable derivada documente su
+proveniencia y que todos los resultados queden disponibles para revisión.
+
+**Cómo interpretar**: los archivos quedan en `bdca/resultados/`:
+`tablas/`, `figuras/`, `reportes/` e `excel/`.
+"""
+
+
+def _code_bdca_fase_7() -> str:
+    return """
+informe_completo(
+    df=df,
+    auditoria=auditoria,
+    descriptivos=descriptivos,
+    fig_paths_eda=fig_paths_eda,
+    resultado_supuestos=resultado_supuestos,
+    resultado_anova=resultado_anova,
+    resultado_lmm=resultado_lmm,
+    resultado_posthoc=resultado_posthoc,
+)
+print("Informe MD/HTML/Excel generado en bdca/resultados/")
+"""
+
+
+def _md_bdca_conclusiones() -> str:
+    return """## Conclusiones generales
+
+1. **Auditoría**: el ensayo RCBD está balanceado (36 filas, sin NA, sin
+   duplicados, 9 por tratamiento y 4 por bloque).
+2. **Supuestos**: la verificación documenta normalidad, homocedasticidad e
+   independencia de los residuos; la ruta de inferencia se elige en función de
+   estos resultados, no al revés.
+3. **Inferencia**: el ANOVA clásico de bloques y el modelo mixto con bloque
+   aleatorio (ICC) evalúan el efecto del tratamiento sobre el rendimiento
+   controlando la variabilidad entre bloques; la aditividad queda documentada
+   como no testable (una observación por celda).
+4. **Comparaciones**: el Tukey HSD con la columna `vs_referencia_R` permite
+   leer directamente qué tratamientos difieren del control.
+
+## Cómo re-ejecutar con un archivo nuevo
+
+1. **Reemplazar la fuente**: `datos_crudos/bdca/DBCA_Jenkyn_control_mildeo.csv`
+   (mismo esquema `plot, trt, block, yield`).
+2. **Generar y ejecutar**: `python3 generar_notebook_pipeline.py` y ejecutar el
+   notebook completo.
+3. Los resultados se escriben siempre en `bdca/resultados/` (tablas, figuras,
+   reportes y Excel), sin tocar los datos fuente.
+"""
 
 
 def _code_fase_1() -> str:
@@ -665,6 +943,49 @@ print("Libro Excel de resumen:", ruta_excel)
 '''
 
 
+def _code_setup() -> str:
+    return '''
+import os
+import sys
+import warnings
+from pathlib import Path
+
+# Determinar la raíz del proyecto (directorio que contiene pipeline/)
+RAIZ = Path(os.getcwd()).resolve()
+for candidato in (RAIZ, RAIZ.parent, RAIZ.parent.parent):
+    if (candidato / "pipeline" / "config.py").exists():
+        RAIZ = candidato
+        break
+if str(RAIZ) not in sys.path:
+    sys.path.insert(0, str(RAIZ))
+os.chdir(RAIZ)
+warnings.filterwarnings("ignore")
+
+import numpy as np
+import pandas as pd
+from IPython.display import display, Markdown
+
+from pipeline.config import (
+    fijar_semilla, METODOS, METODO_LABEL, VARIABLES_RESPUESTA, VARIABLE_LABEL,
+)
+from pipeline import (
+    cargar_datos, limpiar, eda, diseno, supuestos, modelos, comparaciones,
+    visualizar, multivariado, ranking, informe,
+)
+
+fijar_semilla(42)
+
+print("Versión de librerías:")
+import importlib
+for nombre in ("pandas", "numpy", "scipy", "statsmodels", "sklearn", "pingouin", "matplotlib", "seaborn"):
+    try:
+        mod = importlib.import_module(nombre)
+        print(f"  {nombre} {mod.__version__}")
+    except Exception as exc:  # pragma: no cover
+        print(f"  {nombre}: {exc}")
+'''
+
+
 def _md_pie() -> str:
     return """### Nota final sobre interpretación
 
@@ -679,12 +1000,12 @@ def _md_pie() -> str:
 
 
 # ---------------------------------------------------------------------------
-# Construcción del notebook
+# Construcción del notebook DCA (original)
 # ---------------------------------------------------------------------------
 
 
-def construir_notebook() -> nbformat.NotebookNode:
-    """Construye el notebook con nbformat y lo devuelve."""
+def construir_notebook_dca() -> nbformat.NotebookNode:
+    """Construye el notebook DCA con nbformat y lo devuelve."""
     nb = nbformat.v4.new_notebook()
     nb.metadata = {
         "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
@@ -726,14 +1047,56 @@ def construir_notebook() -> nbformat.NotebookNode:
     return nb
 
 
+# ---------------------------------------------------------------------------
+# Construcción del notebook BDCA (nuevo)
+# ---------------------------------------------------------------------------
+
+
+def construir_notebook_bdca() -> nbformat.NotebookNode:
+    """Construye el notebook BDCA con nbformat y lo devuelve."""
+    nb = nbformat.v4.new_notebook()
+    nb.metadata = {
+        "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
+        "language_info": {"name": "python"},
+    }
+    nb.cells = [
+        nbformat.v4.new_markdown_cell(_md_bdca_titulo()),
+        nbformat.v4.new_markdown_cell(_md_bdca_setup()),
+        nbformat.v4.new_code_cell(_code_bdca_setup()),
+        nbformat.v4.new_markdown_cell(_md_bdca_fase_1()),
+        nbformat.v4.new_code_cell(_code_bdca_fase_1()),
+        nbformat.v4.new_markdown_cell(_md_bdca_fase_2()),
+        nbformat.v4.new_code_cell(_code_bdca_fase_2()),
+        nbformat.v4.new_markdown_cell(_md_bdca_fase_3()),
+        nbformat.v4.new_code_cell(_code_bdca_fase_3()),
+        nbformat.v4.new_markdown_cell(_md_bdca_fase_4()),
+        nbformat.v4.new_code_cell(_code_bdca_fase_4()),
+        nbformat.v4.new_markdown_cell(_md_bdca_fase_5()),
+        nbformat.v4.new_code_cell(_code_bdca_fase_5()),
+        nbformat.v4.new_markdown_cell(_md_bdca_fase_6()),
+        nbformat.v4.new_code_cell(_code_bdca_fase_6()),
+        nbformat.v4.new_markdown_cell(_md_bdca_fase_7()),
+        nbformat.v4.new_code_cell(_code_bdca_fase_7()),
+        nbformat.v4.new_markdown_cell(_md_bdca_conclusiones()),
+    ]
+    return nb
+
+
 def main() -> None:
-    """Construye y guarda el notebook, e imprime el número de celdas."""
-    nb = construir_notebook()
-    nbformat.write(nb, SALIDA)
-    n_codigo = sum(1 for c in nb.cells if c.cell_type == "code")
-    n_markdown = sum(1 for c in nb.cells if c.cell_type == "markdown")
-    print(f"Notebook generado: {SALIDA}")
-    print(f"Número de celdas: {len(nb.cells)} ({n_markdown} markdown, {n_codigo} codigo)")
+    """Construye y guarda los notebooks DCA y BDCA, e imprime el número de celdas."""
+    nb_dca = construir_notebook_dca()
+    nbformat.write(nb_dca, SALIDA_DCA)
+    n_codigo_dca = sum(1 for c in nb_dca.cells if c.cell_type == "code")
+    n_markdown_dca = sum(1 for c in nb_dca.cells if c.cell_type == "markdown")
+    print(f"Notebook DCA generado: {SALIDA_DCA}")
+    print(f"Número de celdas DCA: {len(nb_dca.cells)} ({n_markdown_dca} markdown, {n_codigo_dca} codigo)")
+
+    nb_bdca = construir_notebook_bdca()
+    nbformat.write(nb_bdca, SALIDA_BDCA)
+    n_codigo_bdca = sum(1 for c in nb_bdca.cells if c.cell_type == "code")
+    n_markdown_bdca = sum(1 for c in nb_bdca.cells if c.cell_type == "markdown")
+    print(f"Notebook BDCA generado: {SALIDA_BDCA}")
+    print(f"Número de celdas BDCA: {len(nb_bdca.cells)} ({n_markdown_bdca} markdown, {n_codigo_bdca} codigo)")
 
 
 if __name__ == "__main__":

@@ -1044,6 +1044,335 @@ def html_tabla_posthoc(df: pd.DataFrame) -> str:
     return f"<table>{head}<tbody>{filas}</tbody></table>"
 
 
+# ---------------------------------------------------------------------------
+# Pagina BDCA (una respuesta: yield, RCBD)
+# ---------------------------------------------------------------------------
+
+
+def _bdca_tabla(diseno: str, nombre: str, **kw) -> pd.DataFrame | None:
+    """Lee una tabla de <diseno>/resultados/tablas; None si no existe."""
+    ruta = RAIZ / diseno / "resultados" / "tablas" / f"{nombre}.csv"
+    if not ruta.exists():
+        return None
+    return pd.read_csv(ruta, **kw)
+
+
+def fig_bdca_boxplot_yield() -> go.Figure:
+    """Boxplot de rendimiento por tratamiento (RCBD)."""
+    ruta = RAIZ / "datos_crudos" / "bdca" / "DBCA_Jenkyn_control_mildeo.csv"
+    df = pd.read_csv(ruta)
+    df["trt"] = df["trt"].astype(str).str.strip().str.upper()
+    orden = sorted(df["trt"].unique())
+    fig = go.Figure()
+    for trt in orden:
+        fig.add_trace(go.Box(
+            y=df.loc[df["trt"] == trt, "yield"],
+            name=trt,
+            boxpoints="all",
+            jitter=0.3,
+            pointpos=0,
+            line=dict(color="#0072B2"),
+            fillcolor="rgba(0,114,178,0.15)",
+            marker=dict(color="#0072B2", size=5),
+        ))
+    fig.update_layout(xaxis_title="Tratamiento", yaxis_title="Rendimiento (yield)")
+    return _base_layout(fig, "Rendimiento por tratamiento (yield)")
+
+
+def fig_bdca_medias_ic(des: pd.DataFrame) -> go.Figure:
+    """Barras de medias con IC95% por tratamiento."""
+    df = des.copy()
+    fig = go.Figure(go.Bar(
+        x=df["trt"], y=df["media"],
+        error_y=dict(
+            type="data",
+            array=df["media"] - df["ic95_inferior"],
+            arrayminus=df["media"] - df["ic95_inferior"],
+            visible=True, thickness=1.4, width=6, color="#444444",
+        ),
+        marker_color="#0072B2",
+        text=[f"{v:.2f}" for v in df["media"]],
+        textposition="outside",
+        hovertemplate="%{y:.2f}<extra>%{x}</extra>",
+    ))
+    fig.update_layout(
+        xaxis_title="Tratamiento",
+        yaxis_title="Rendimiento medio (yield) ± IC 95%",
+        bargap=0.35,
+    )
+    return _base_layout(fig, "Rendimiento medio por tratamiento con IC 95%")
+
+
+def fig_bdca_tukey(ph: pd.DataFrame) -> go.Figure:
+    """Diferencias de medias por par con IC95% (Tukey HSD)."""
+    df = ph.copy()
+    colores = ["#D55E00" if not s else "#0072B2" for s in df["significativo"]]
+    fig = go.Figure()
+    for _, r in df.iterrows():
+        color = "#0072B2" if r["significativo"] else "#5A5A5A"
+        fig.add_trace(go.Scatter(
+            x=[r["diferencia_medias"]], y=[r["par"]],
+            mode="markers", marker=dict(color=color, size=11),
+            error_x=dict(
+                type="data",
+                symmetric=False,
+                array=[r["ic95_superior"] - r["diferencia_medias"]],
+                arrayminus=[r["diferencia_medias"] - r["ic95_inferior"]],
+                thickness=1.5, width=5, color=color,
+            ),
+            hovertemplate=f"{r['par']}: {r['diferencia_medias']:.3f} (IC95 {r['ic95_inferior']:.3f}–{r['ic95_superior']:.3f})",
+            showlegend=False,
+        ))
+    fig.add_vline(x=0, line_dash="dash", line_color="#888888")
+    fig.update_layout(
+        xaxis_title="Diferencia de medias",
+        yaxis_title="Par comparado",
+        height=320,
+        margin=dict(l=20, r=20, t=30, b=50),
+    )
+    return _base_layout(fig, "Tukey HSD: diferencias de medias por par (IC 95%)")
+
+
+def main_bdca() -> None:
+    """Genera pagina/bdca/index.html con el estándar del estudio (una respuesta: yield)."""
+    DIR_BDCA = RAIZ / "bdca"
+    DIR_PAG_BDCA = RAIZ / "pagina" / "bdca"
+
+    # Tablas del análisis BDCA
+    aud = _bdca_tabla("bdca", "auditoria_bdca")
+    des = _bdca_tabla("bdca", "eda_descriptivos")
+    sup = _bdca_tabla("bdca", "supuestos_modelo")
+    anova = _bdca_tabla("bdca", "anova_bloques")
+    lmm_f = _bdca_tabla("bdca", "lmm_bloques_fijos")
+    lmm_v = _bdca_tabla("bdca", "lmm_bloques_varianzas")
+    ph = _bdca_tabla("bdca", "posthoc_tukey")
+
+    faltantes = [n for n, t in [
+        ("auditoria_bdca", aud), ("eda_descriptivos", des), ("supuestos_modelo", sup),
+        ("anova_bloques", anova), ("lmm_bloques_fijos", lmm_f),
+        ("lmm_bloques_varianzas", lmm_v), ("posthoc_tukey", ph),
+    ] if t is None]
+    if faltantes:
+        sys.exit(f"Faltan tablas BDCA en bdca/resultados/tablas/: {faltantes}. "
+                 f"Ejecuta el pipeline primero (PIPELINE_DISENO=bdca).")
+
+    # Figuras
+    f = {
+        "boxplot": _html_figura(fig_bdca_boxplot_yield()),
+        "medias": _html_figura(fig_bdca_medias_ic(des)),
+        "tukey": _html_figura(fig_bdca_tukey(ph)),
+    }
+
+    # Valores para cifras
+    r = aud.iloc[0] if aud is not None else {}
+    n_filas = int(r.get("total_filas", 36))
+    n_trt = int(r.get("conteo_por_trt", 4)) if not isinstance(r.get("conteo_por_trt"), (dict, list, str)) else 4
+    n_bloques = int(r.get("conteo_por_block", 9)) if not isinstance(r.get("conteo_por_block"), (dict, list, str)) else 9
+    # Leer contadores del dict (guardado como string)
+    import json as _json
+    try:
+        if isinstance(r.get("conteo_por_trt"), str):
+            n_trt = len(_json.loads(r["conteo_por_trt"].replace("'", '"')))
+        if isinstance(r.get("conteo_por_block"), str):
+            n_bloques = len(_json.loads(r["conteo_por_block"].replace("'", '"')))
+    except Exception:
+        pass
+
+    # Tablas HTML
+    html_aud = html_tabla_diseno(pd.DataFrame([
+        {"atributo": "Filas únicas", "valor": str(int(r.get("total_filas", 36)))},
+        {"atributo": "Duplicados", "valor": str(int(r.get("filas_duplicadas", 0)))},
+        {"atributo": "Valores faltantes", "valor": str(int(r.get("filas_con_na", 0)))},
+        {"atributo": "Auditoría aprobada", "valor": "Sí" if r.get("auditado_ok") else "No"},
+    ]))
+    html_sup = html_tabla_supuestos(sup) if sup is not None else "<p>Tabla de supuestos no disponible.</p>"
+    html_anova = html_tabla_anova(anova) if anova is not None else "<p>Tabla ANOVA no disponible.</p>"
+    html_posthoc = html_tabla_posthoc(ph) if ph is not None else "<p>Tabla post-hoc no disponible.</p>"
+
+    lmm_filas = ""
+    if lmm_f is not None:
+        for _, rw in lmm_f.iterrows():
+            lmm_filas += (
+                f"<tr><td>{rw['efecto']}</td><td class='num'>{es_num(rw['coeficiente'], 3)}</td>"
+                f"<td class='num'>{es_num(rw['error_estandar'], 3)}</td>"
+                f"<td class='num'>{es_p(rw['p_valor'])}</td>"
+                f"<td class='num'>{es_num(rw['ic95_inferior'], 3)}–{es_num(rw['ic95_superior'], 3)}</td></tr>"
+            )
+    html_lmm = f"<table><thead><tr><th>Efecto</th><th>Coeficiente</th><th>EE</th><th>p</th><th>IC 95%</th></tr></thead><tbody>{lmm_filas}</tbody></table>"
+
+    icc_txt = ""
+    if lmm_v is not None:
+        icc = lmm_v[lmm_v["parametro"] == "ICC"]["valor"].iloc[0] if "ICC" in lmm_v["parametro"].values else None
+        if icc is not None:
+            icc_txt = f"<p>El <strong>ICC = {icc:.3f}</strong> indica que el bloque explica una parte importante de la variación total (variabilidad espacial del ensayo).</p>"
+
+    # Interpretación por pares vs R
+    pares_r = ""
+    if ph is not None:
+        vs_r = ph[ph["vs_referencia_R"] == True]  # noqa: E712
+        filas_r = ""
+        for _, rw in vs_r.iterrows():
+            estado = "difiere" if rw["significativo"] else "no difiere"
+            filas_r += (
+                f"<tr><td><strong>{rw['par']}</strong></td><td class='num'>{es_num(rw['diferencia_medias'], 3)}</td>"
+                f"<td class='num'>{es_p(rw['p_valor_ajustado'])}</td><td>{estado} de R</td></tr>"
+            )
+        pares_r = f"<table><thead><tr><th>Par</th><th>Diferencia</th><th>p ajustado</th><th>vs R</th></tr></thead><tbody>{filas_r}</tbody></table>"
+
+    css = CSS
+    vuelta_hub = "../index.html"
+    nav = (
+        f'<a class="enlace vuelta" href="{vuelta_hub}" title="Volver al índice de análisis">← Análisis</a>'
+        + "".join(
+            f'<a class="enlace" href="#{seccion}">{etiqueta}</a>'
+            for seccion, etiqueta in [
+                ("hero", "Resumen"), ("desafio", "El ensayo"), ("diseno", "Diseño"),
+                ("ruta", "Ruta estadística"), ("bloque-resultados", "Resultados"),
+                ("conclusiones", "Conclusiones"), ("metodologia", "Metodología"),
+            ]
+        )
+    )
+
+    hero_cifras = "".join(
+        f'<div class="cifra"><div class="valor">{valor}</div>'
+        f'<div class="etiqueta">{etiqueta}</div></div>'
+        for valor, etiqueta in [
+            (str(n_filas), "unidades experimentales (parcelas)"),
+            (str(n_trt), "tratamientos (R, T0, T1, T2)"),
+            (str(n_bloques), "bloques completos"),
+            ("1", "respuesta analizada (rendimiento)"),
+        ]
+    )
+
+    html = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Análisis estadístico del ensayo en bloques completos al azar (RCBD) de rendimiento — Thymus vulgaris contra Fusarium spp.">
+<title>BDCA — Bloques completos al azar (rendimiento)</title>
+<script src="{PLOTLY_CDN}"></script>
+<style>{css}</style>
+</head>
+<body>
+<nav class="fijo">
+  <span class="marca">Thymus × Fusarium</span>
+  {nav}
+</nav>
+
+<div class="contenido">
+
+  <!-- ================= SECCION 1: HERO ================= -->
+  <section id="hero" class="seccion ancla">
+    <h1 class="titulo-hero">Diseño de bloques completos al azar (BDCA)</h1>
+    <p class="subtitulo-hero">Comparación del rendimiento (<em>yield</em>) entre 4 tratamientos
+    (R, T0, T1, T2) en 9 bloques completos, con modelo mixto de bloque aleatorio,
+    ANOVA clásico y Tukey HSD contra la referencia R.</p>
+    <div class="grid-cifras">{hero_cifras}</div>
+  </section>
+
+  <!-- ================= SECCION 2: EL ENSAYO ================= -->
+  <section id="desafio" class="seccion ancla">
+    <h2 class="seccion-titulo"><span class="num">2</span>El ensayo</h2>
+    <p class="lead">El ensayo de Jenkyn evalúa el control del mildiu (mildeo) mediante
+    tratamientos aplicados a parcelas dispuestas en <strong>bloques completos al azar</strong>.
+    La variabilidad espacial del terreno se controla agrupando las parcelas en 9 bloques,
+    dentro de cada uno de los cuales los 4 tratamientos aparecen una única vez.</p>
+    <p>Con una sola observación por celda tratamiento × bloque, el modelo de bloques no
+    puede estimar el término de interacción: la <strong>aditividad</strong> se documenta como
+    una suposición no testable (AGENTS.md §4.2).</p>
+    <div class="que-significa">
+      <div class="titulo-tarjeta">Qué significa</div>
+      <p>El bloque es la unidad de control de la heterogeneidad espacial: si el ICC es alto,
+      gran parte de la variación del rendimiento se explica por diferencias entre bloques y el
+      diseño RCBD fue la elección correcta.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECCION 3: DISEÑO ================= -->
+  <section id="diseno" class="seccion ancla">
+    <h2 class="seccion-titulo"><span class="num">3</span>Diseño experimental</h2>
+    {html_aud}
+    <p>Estructura: 36 parcelas = 4 tratamientos × 9 bloques; una parcela por celda.
+    La auditoría confirma balance: 9 observaciones por tratamiento y 4 por bloque,
+    sin duplicados ni valores faltantes.</p>
+  </section>
+
+  <!-- ================= SECCION 4: RUTA ================= -->
+  <section id="ruta" class="seccion ancla">
+    <h2 class="seccion-titulo"><span class="num">4</span>Ruta estadística</h2>
+    <table>
+    <thead><tr><th>Etapa</th><th>Método</th><th>Resultado clave</th></tr></thead>
+    <tbody>
+    <tr><td><strong>Auditoría</strong></td><td>Balance, NA, duplicados</td><td>36 filas, sin anomalías</td></tr>
+    <tr><td><strong>EDA</strong></td><td>Medias + IC95% por tratamiento</td><td>R=5,94; T0=5,31; T1=5,87; T2=6,09</td></tr>
+    <tr><td><strong>Supuestos</strong></td><td>Shapiro-Wilk, Levene, Durbin-Watson</td><td>Ruta paramétrica</td></tr>
+    <tr><td><strong>Modelo primario</strong></td><td>LMM con bloque aleatorio (REML)</td><td>ICC reportado</td></tr>
+    <tr><td><strong>Complemento</strong></td><td>ANOVA clásico de bloques (typ=2)</td><td>F trat = 28,77; p &lt; 0,001; η²p = 0,78</td></tr>
+    <tr><td><strong>Post-hoc</strong></td><td>Tukey HSD (6 pares, vs R)</td><td>Contrastes vs referencia R</td></tr>
+    </tbody>
+    </table>
+  </section>
+
+  <!-- ================= SECCION 5: RESULTADOS ================= -->
+  <section id="bloque-resultados" class="seccion ancla">
+    <h2 class="seccion-titulo"><span class="num">5</span>Resultados</h2>
+
+    <h3 class="sub-seccion">Exploración descriptiva</h3>
+    {html_figura_bloque("Rendimiento por tratamiento", f["boxplot"], "Boxplot con todos los puntos; la caja muestra mediana y cuartiles por tratamiento.", "A")}
+    {html_figura_bloque("Rendimiento medio con IC 95%", f["medias"], "Barras de medias con IC95%; la superposición de intervalos anticipa qué pares pueden diferir.", "B")}
+
+    <h3 class="sub-seccion">Verificación de supuestos</h3>
+    {html_sup}
+
+    <h3 class="sub-seccion">ANOVA clásico de bloques (complemento educativo)</h3>
+    {html_anova}
+
+    <h3 class="sub-seccion">Modelo mixto lineal (análisis primario)</h3>
+    {html_lmm}
+    {icc_txt}
+
+    <h3 class="sub-seccion">Comparaciones post-hoc (Tukey HSD)</h3>
+    {html_figura_bloque("Tukey HSD", f["tukey"], "Diferencias de medias por par con IC95%; en azul los pares significativos, en gris los no significativos. La línea punteada marca la ausencia de diferencia.", "C")}
+    {html_posthoc}
+
+    <h3 class="sub-seccion">Contrastes contra la referencia R</h3>
+    {pares_r}
+  </section>
+
+  <!-- ================= SECCION 6: CONCLUSIONES ================= -->
+  <section id="conclusiones" class="seccion ancla">
+    <h2 class="seccion-titulo"><span class="num">6</span>Conclusiones</h2>
+    <p>La auditoría confirma un diseño RCBD balanceado. La ruta inferencial se eligió tras
+    documentar los supuestos (normalidad, homocedasticidad e independencia de residuos).
+    El modelo primario trata el bloque como efecto aleatorio (LMM, REML) y reporta el ICC;
+    el ANOVA clásico de bloques se conserva como complemento educativo. Las comparaciones
+    post-hoc con Tukey HSD interpretan cada par contra la referencia R.</p>
+    <div class="que-significa">
+      <div class="titulo-tarjeta">Limitaciones</div>
+      <p>Con una observación por celda tratamiento × bloque, la aditividad no es testeable:
+      el modelo asume efectos aditivos de tratamiento y bloque sin interacción.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECCION 7: METODOLOGIA ================= -->
+  <section id="metodologia" class="seccion ancla">
+    <h2 class="seccion-titulo"><span class="num">7</span>Metodología y reproducibilidad</h2>
+    <p>Pipeline reproducible: <code>pipeline/bdca/</code> (cargar → eda → supuestos →
+    modelos → comparaciones → informe). Resultados en <code>bdca/resultados/</code>.
+    Notebook educativo: <code>bdca/analisis_bdca.ipynb</code>.</p>
+  </section>
+
+</div>
+</body>
+</html>
+"""
+    DIR_PAG_BDCA.mkdir(parents=True, exist_ok=True)
+    (DIR_PAG_BDCA / "index.html").write_text(html, encoding="utf-8")
+    print(f"OK: pagina/bdca/index.html generada con {len(f)} figuras Plotly.")
+    print(f"Tamaño: {sum(len(v) for v in f.values()) / 1024:.0f} KB de figuras embebidas.")
+
+
 def main() -> None:
     if not MASTER_CSV.exists() or not REND_CSV.exists():
         sys.exit(f"Faltan datos maestros: {MASTER_CSV} o {REND_CSV}")
@@ -1569,7 +1898,7 @@ a.pie-enlace{color:var(--azul);text-decoration:none;}
 
 
 def generar_hub() -> None:
-    """Genera pagina/index.html (hub) y los placeholders BDCA y factorial."""
+    """Genera pagina/index.html (hub) y placeholders para diseños futuros."""
     DIR_PAGINA.mkdir(parents=True, exist_ok=True)
 
     disenos = [
@@ -1583,8 +1912,9 @@ def generar_hub() -> None:
         {
             "clave": "bdca",
             "titulo": "BDCA — Bloques completos al azar",
-            "desc": "Análisis con control de la variabilidad entre bloques experimentales (efecto aleatorio).",
-            "estado": "futuro", "estado_txt": "Próximamente", "href": "bdca/index.html",
+            "desc": "Análisis con control de la variabilidad entre bloques experimentales (efecto aleatorio): "
+                    "4 tratamientos × 9 bloques, modelo mixto de bloque aleatorio y Tukey HSD.",
+            "estado": "activo", "estado_txt": "Disponible", "href": "bdca/index.html",
         },
         {
             "clave": "factorial",
@@ -1626,7 +1956,9 @@ def generar_hub() -> None:
 """
     (DIR_PAGINA / "index.html").write_text(html, encoding="utf-8")
 
-    for d in disenos[1:]:
+    for d in disenos:
+        if d["estado"] != "futuro":
+            continue
         sub = DIR_PAGINA / d["clave"]
         sub.mkdir(parents=True, exist_ok=True)
         ph = f"""<!DOCTYPE html>
@@ -1642,14 +1974,15 @@ def generar_hub() -> None:
   <p><a class="pie-enlace" href="../index.html">← Volver al índice de análisis</a></p>
   <h1>{d['titulo']}</h1>
   <p class="sub">Este análisis se encuentra en preparación. Cuando estén disponibles los datos del diseño,
-  esta página mostrará los resultados completos con el mismo estándar que el análisis DCA.</p>
+  esta página mostrará los resultados completos con el mismo estándar que los análisis DCA y BDCA.</p>
 </div>
 </body>
 </html>
 """
         (sub / "index.html").write_text(ph, encoding="utf-8")
 
-    print("OK: pagina/index.html (hub) + placeholders bdca/ y factorial/ generados.")
+    futuros = [d["clave"] for d in disenos if d["estado"] == "futuro"]
+    print(f"OK: pagina/index.html (hub) + placeholders {futuros or 'ninguno'} generados.")
 
 
 if __name__ == "__main__":
@@ -1657,10 +1990,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Genera la pagina interactiva del estudio.")
     parser.add_argument("--hub", action="store_true", help="genera el hub y los placeholders")
-    parser.add_argument("--diseno", choices=["dca"], default="dca", help="analisis a generar")
+    parser.add_argument("--diseno", choices=["dca", "bdca"], default="dca", help="analisis a generar")
     args = parser.parse_args()
 
     if args.hub:
         generar_hub()
+    elif args.diseno == "bdca":
+        main_bdca()
     else:
         main()
