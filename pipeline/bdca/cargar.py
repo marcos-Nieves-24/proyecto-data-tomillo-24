@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 import os
 
-from pipeline.config import guardar_tabla, DIR_CRUDOS
+from pipeline.config import guardar_tabla, DIR_CRUDOS, DIR_DATABASE
 
 
 CSV_BDCA = DIR_CRUDOS / "DBCA_Jenkyn_control_mildeo.csv"
@@ -101,6 +101,14 @@ def cargar() -> tuple[pd.DataFrame, dict]:
 
     # Guardar auditoría
     guardar_tabla(pd.DataFrame([conclusion]), "auditoria_bdca", index=False)
+
+    # Guardar dataset auditado en database/ (estándar DCA: master dataset consolidado)
+    # Provenance: filas idénticas al CSV crudo datos_crudos/bdca/DBCA_Jenkyn_control_mildeo.csv;
+    # solo se estandarizan etiquetas (trt/block a mayúsculas) y tipos; ningún valor se modifica.
+    df_auditado = df.copy()
+    DIR_DATABASE.mkdir(parents=True, exist_ok=True)
+    df_auditado.to_csv(DIR_DATABASE / "master_bdca_jenkyn.csv", index=False)
+    print(f"✓ Dataset auditado guardado en {DIR_DATABASE / 'master_bdca_jenkyn.csv'}")
 
     # Devolver solo las columnas utilizadas en el análisis
     df_final = df[["trt", "block", "yield"]].copy()
