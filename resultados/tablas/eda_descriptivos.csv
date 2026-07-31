@@ -1,0 +1,19 @@
+metodo_extraccion,variable,n,media,desviacion_estandar,error_estandar,ic95_inferior,ic95_superior,minimo,maximo
+Maceración,Crecimiento micelial (mm),93,7.484,8.546,0.886,5.724,9.244,0.0,28.0
+Maceración,Inhibición micelial (%),93,86.349,15.913,1.65,83.072,89.626,44.0,100.0
+Maceración,Conidias (log10/mL),93,5.268,1.78,0.185,4.902,5.635,0.0,7.56
+Maceración,Inhibición de conidias (%),93,29.239,23.748,2.463,24.349,34.13,-1.449,100.0
+Maceración,Control C4: crecimiento micelial (mm),93,56.677,11.009,1.142,54.41,58.945,26.0,75.0
+Maceración,Control C4: conidias (log10/mL),93,7.392,0.481,0.05,7.293,7.491,6.18,8.03
+Soxhlet,Crecimiento micelial (mm),93,22.204,6.877,0.713,20.788,23.621,10.0,40.0
+Soxhlet,Inhibición micelial (%),93,59.593,13.617,1.412,56.788,62.397,13.043,84.375
+Soxhlet,Conidias (log10/mL),93,7.041,0.566,0.059,6.924,7.157,5.78,8.26
+Soxhlet,Inhibición de conidias (%),93,4.432,9.194,0.953,2.539,6.326,-32.584,24.067
+Soxhlet,Control C4: crecimiento micelial (mm),93,56.677,11.009,1.142,54.41,58.945,26.0,75.0
+Soxhlet,Control C4: conidias (log10/mL),93,7.392,0.481,0.05,7.293,7.491,6.18,8.03
+Ultrasonido,Crecimiento micelial (mm),93,25.097,7.179,0.744,23.618,26.575,12.0,37.0
+Ultrasonido,Inhibición micelial (%),93,54.765,12.642,1.311,52.161,57.368,26.087,82.353
+Ultrasonido,Conidias (log10/mL),93,7.378,0.499,0.052,7.276,7.481,5.48,8.65
+Ultrasonido,Inhibición de conidias (%),93,-0.17,8.679,0.9,-1.957,1.618,-26.277,20.58
+Ultrasonido,Control C4: crecimiento micelial (mm),93,56.677,11.009,1.142,54.41,58.945,26.0,75.0
+Ultrasonido,Control C4: conidias (log10/mL),93,7.392,0.481,0.05,7.293,7.491,6.18,8.03

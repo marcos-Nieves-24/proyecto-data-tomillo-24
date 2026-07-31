@@ -1,0 +1,8 @@
+variable,tipo_dato,n_no_nulos,pct_faltantes,columna_constante,n_filas_duplicadas,n_valores_inconsistentes,n_atipicos_iqr
+Metodo de extraccion,str,279,0.0,False,0,0,0
+Aislamiento,str,279,0.0,False,0,0,0
+Replica,str,279,0.0,False,0,0,0
+Crecimiento micelial (mm),int64,279,0.0,False,0,0,0
+%INH micelial,float64,279,0.0,False,0,0,1
+Conidias (log10/ml),float64,279,0.0,False,0,0,8
+%INH conidias,float64,279,0.0,False,0,0,9

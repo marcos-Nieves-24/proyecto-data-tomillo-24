@@ -1,0 +1,5 @@
+test,estadistico,p_valor,interpretacion
+Shapiro-Wilk (residuos),0.9908,0.0788,No se rechaza normalidad de los residuos (p>0.05).
+Levene (por metodo),2.3399,0.0982,Homocedasticidad aceptada (p>0.05).
+Bartlett (por metodo),5.1538,0.076,Homocedasticidad aceptada (p>0.05).
+Durbin-Watson (independencia),2.7034,,Posible autocorrelacion (DW fuera de 1.5-2.5).

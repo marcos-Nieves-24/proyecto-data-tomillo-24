@@ -1,0 +1,4 @@
+metodo_extraccion,media,desviacion_estandar,error_estandar,ic95_inferior,ic95_superior,n
+maceracion,7.484,8.546,0.886,5.724,9.244,93
+soxhlet,22.204,6.877,0.713,20.788,23.621,93
+ultrasonido,25.097,7.179,0.744,23.618,26.575,93

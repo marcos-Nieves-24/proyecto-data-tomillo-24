@@ -1,0 +1,3 @@
+variable,n_verificadas,max_diff_abs,n_discrepancias,estado,nota
+porcentaje_inhibicion_micelial,279,0.0,0,ok,La fórmula (1 - C1/C4) x 100 coincide con el %INH reportado (tolerancia 1e-6).
+porcentaje_inhibicion_conidias,279,0.0,0,ok,La fórmula (1 - C1/C4) x 100 coincide con el %INH reportado (tolerancia 1e-6).

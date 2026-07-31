@@ -1,0 +1,4 @@
+estadistico,valor,p_valor
+Shapiro-Wilk (residuos),0.9115,0.3262
+Levene,1.8698,0.2338
+Kruskal-Wallis,7.2,0.0273

@@ -1,0 +1,4 @@
+par,diferencia_medias,p_valor_ajustado,ic95_inferior,ic95_superior,significativo,letras
+maceracion vs soxhlet,-26.756387649306966,0.0,-31.637086838508083,-21.87568846010585,True,sin letra comun
+maceracion vs ultrasonido,-31.58435501031984,0.0,-36.46505419952096,-26.703655821118723,True,sin letra comun
+soxhlet vs ultrasonido,-4.827967361012874,0.05325617395859472,-9.70866655021399,0.05273182818824207,False,b

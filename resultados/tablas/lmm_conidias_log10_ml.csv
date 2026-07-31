@@ -1,0 +1,5 @@
+efecto,coeficiente,error_estandar,t,p_valor,ic95_inferior,ic95_superior
+Intercept,5.2683,0.1377,38.2658,0.0,4.9984,5.5381
+C(metodo_extraccion)[T.soxhlet],1.7724,0.1463,12.1144,0.0,1.4856,2.0591
+C(metodo_extraccion)[T.ultrasonido],2.1101,0.1463,14.4229,0.0,1.8234,2.3969
+Group Var,0.257,0.1007,2.5529,0.0107,0.0597,0.4544

@@ -1,0 +1,10 @@
+metodo_extraccion,peso_material_seco_g,peso_extracto_obtenido_g,rendimiento_pct,replica_biologica
+maceración,40,4.5375,11.343749999999998,1
+maceración,40,4.886,12.215,2
+maceración,40,5.0583,12.64575,3
+soxhlet,30,12.6692,42.23066666666667,1
+soxhlet,30,11.1961,37.32033333333333,2
+soxhlet,30,15.1767,50.589000000000006,3
+ultrasonido,40,6.1994,15.498499999999998,1
+ultrasonido,40,6.4571,16.14275,2
+ultrasonido,40,7.8076,19.519,3

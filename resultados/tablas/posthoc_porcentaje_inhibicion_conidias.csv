@@ -1,0 +1,4 @@
+par,estadistico_z,p_valor,p_valor_ajustado,letras
+maceracion vs soxhlet,9.021910381235461,0.0,0.0,sin letra comun
+maceracion vs ultrasonido,11.83594669405295,0.0,0.0,sin letra comun
+soxhlet vs ultrasonido,2.814036312817488,0.0048923701533742925,0.0048923701533742925,sin letra comun

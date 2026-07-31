@@ -1,0 +1,11 @@
+atributo,valor
+Tipo de diseño,DCA factorial método × aislado
+Factores,"método de extracción (fijo); aislado (fijo en ANOVA, aleatorio en LMM)"
+Niveles de método,3
+Niveles de aislado,31
+Número de tratamientos (método × aislado),93
+Réplicas biológicas por celda,3
+Unidad experimental,Caja Petri
+Concentración ensayada (mg/mL),5.0
+Variables de respuesta,Crecimiento micelial (mm); Inhibición micelial (%); Conidias (log10/mL); Inhibición de conidias (%)
+Diseño balanceado,Sí

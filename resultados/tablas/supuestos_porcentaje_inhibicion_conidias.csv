@@ -1,0 +1,5 @@
+test,estadistico,p_valor,interpretacion
+Shapiro-Wilk (residuos),0.7731,0.0,Se rechaza normalidad de los residuos (p<0.05).
+Levene (por metodo),9.5376,0.0001,Heterocedasticidad detectada (p<0.05).
+Bartlett (por metodo),124.8739,0.0,Heterocedasticidad detectada (p<0.05).
+Durbin-Watson (independencia),2.4128,,Independencia razonable (DW cercano a 2).

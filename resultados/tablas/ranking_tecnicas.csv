@@ -1,0 +1,4 @@
+ranking,metodo_extraccion,rendimiento_medio_pct,inhib_micelial_medio_pct,inhib_conidias_medio_pct,rendimiento_norm,inhib_micelial_norm,inhib_conidias_norm,score_compuesto
+1,maceracion,12.068,86.349,29.239,0.0,1.0,1.0,0.667
+2,soxhlet,43.38,59.593,4.432,1.0,0.153,0.156,0.436
+3,ultrasonido,17.053,54.765,-0.17,0.159,0.0,0.0,0.053
