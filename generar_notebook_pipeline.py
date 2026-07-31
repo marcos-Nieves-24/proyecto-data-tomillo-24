@@ -485,15 +485,18 @@ def _md_pie() -> str:
 def _md_bdca_titulo() -> str:
     return """# Pipeline reproducible de análisis estadístico (BDCA)
 
-## Diseño de bloques completos al azar (RCBD): rendimiento de cultivares frente a mildiu
+## Diseño de bloques completos al azar (RCBD): rendimiento de cultivares frente a mildeo/oídio
 
 Este notebook es el **orquestador educativo** del análisis del ensayo de bloques
 completos al azar (RCBD) de **una sola respuesta**: el rendimiento (`yield`).
 
 ### Contexto del ensayo
 
+- **Enfermedad**: mildeo/oídio, hongo patógeno foliar que afecta a los cereales (cebada o trigo).
+- **Objetivo**: evaluar si distintos esquemas de aplicación de fungicida protegen el rendimiento del cultivo (variable proxy: si el fungicida controla el mildeo, se espera mayor rendimiento).
 - **Fuente**: `datos_crudos/bdca/DBCA_Jenkyn_control_mildeo.csv`
-- **Estructura**: 36 observaciones = 4 tratamientos (R, T0, T1, T2) × 9 bloques (B1-B9).
+- **Estructura**: 36 observaciones = 4 tratamientos (T0, T1, T2, R) × 9 bloques (B1-B9).
+- **Tratamientos**: T0 = sin tratar (control, la enfermedad progresa libremente); T1 = aspersión temprana; T2 = aspersión tardía; R = aspersión repetida (temprana + tardía).
 - **Unidad experimental**: una parcela por celda tratamiento × bloque (una sola observación por celda).
 - **Variables**: `plot`, `trt`, `block`, `yield`.
 
@@ -501,7 +504,7 @@ completos al azar (RCBD) de **una sola respuesta**: el rendimiento (`yield`).
 
 1. **Rendimiento**: comparar el rendimiento (`yield`) entre los 4 tratamientos, controlando el efecto de bloque.
 2. **Inferencia rigurosa**: verificar supuestos antes de elegir el modelo (ANOVA clásico como complemento educativo y modelo mixto lineal con bloque aleatorio como análisis primario).
-3. **Comparaciones**: contrastar cada tratamiento contra la referencia R con Tukey HSD.
+3. **Comparaciones**: contrastar cada tratamiento contra el control T0 (sin tratar) con Tukey HSD.
 4. **Reproducibilidad**: todo el análisis es re-ejecutable con datos nuevos.
 
 ### Estructura del análisis
@@ -513,7 +516,7 @@ completos al azar (RCBD) de **una sola respuesta**: el rendimiento (`yield`).
 | 3 | `supuestos` | Verificación de supuestos del modelo de bloques |
 | 4 | `modelos` | ANOVA clásico de bloques (educativo) |
 | 5 | `modelos` | Modelo mixto lineal con bloque aleatorio (ICC) |
-| 6 | `comparaciones` | Tukey HSD con interpretación vs referencia R |
+| 6 | `comparaciones` | Tukey HSD con interpretación vs control T0 |
 | 7 | `informe` | Informe final (MD/HTML/Excel) |
 """
 
@@ -720,12 +723,15 @@ def _md_bdca_fase_6() -> str:
 
 **Qué se hace**: se comparan los tratamientos por pares con **Tukey HSD**
 (6 pares), reportando diferencia de medias, p ajustado, IC95% y una columna
-`vs_referencia_R` que marca explícitamente los contrastes contra el control R.
+`vs_referencia_T0` que marca explícitamente los contrastes contra el control T0
+(sin tratar).
 Se guarda además el Tukey plot (`posthoc_tukey_pares`).
 
 **Por qué**: comparar todos los pares sin corregir infla el error tipo I; Tukey
-HSD controla la tasa de error familiar. La referencia R es el control del
-ensayo, por lo que sus contrastes tienen interpretación biológica directa.
+HSD controla la tasa de error familiar. T0 es el control del ensayo (sin tratar,
+la enfermedad progresa libremente), por lo que sus contrastes tienen
+interpretación biológica directa: si el fungicida protege el rendimiento, los
+tratamientos deben superar a T0.
 
 **Cómo interpretar**:
 - Un par con `significativo=True` difiere al nivel 0.05 ajustado.

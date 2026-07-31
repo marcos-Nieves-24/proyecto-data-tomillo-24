@@ -131,22 +131,22 @@ Dado un solo cultivo por celda trt × bloque, el término de interacción no pue
 ## Comparaciones múltiples post-hoc Tukey HSD
 ---
 
-### Resultados Tukey HSD (referencia: R)
-| par      |   diferencia_medias |   p_valor_ajustado |   ic95_inferior |   ic95_superior | significativo   | vs_referencia_R   |
-|:---------|--------------------:|-------------------:|----------------:|----------------:|:----------------|:------------------|
-| R vs T0  |          -0.632222  |         0.0194982  |     -1.18319    |      -0.0812508 | True            | True              |
-| R vs T1  |          -0.0744444 |         0.982927   |     -0.625416   |       0.476527  | False           | True              |
-| R vs T2  |           0.145556  |         0.890102   |     -0.405416   |       0.696527  | False           | True              |
-| T0 vs T1 |           0.557778  |         0.0463564  |      0.00680639 |       1.10875   | True            | False             |
-| T0 vs T2 |           0.777778  |         0.00305469 |      0.226806   |       1.32875   | True            | False             |
-| T1 vs T2 |           0.22      |         0.702924   |     -0.330971   |       0.770971  | False           | False             |
+### Resultados Tukey HSD (referencia: T0, control sin tratar)
+| par      |   diferencia_medias |   p_valor_ajustado |   ic95_inferior |   ic95_superior | significativo   | vs_referencia_T0   |
+|:---------|--------------------:|-------------------:|----------------:|----------------:|:----------------|:-------------------|
+| R vs T0  |          -0.632222  |         0.0194982  |     -1.18319    |      -0.0812508 | True            | True               |
+| R vs T1  |          -0.0744444 |         0.982927   |     -0.625416   |       0.476527  | False           | False              |
+| R vs T2  |           0.145556  |         0.890102   |     -0.405416   |       0.696527  | False           | False              |
+| T0 vs T1 |           0.557778  |         0.0463564  |      0.00680639 |       1.10875   | True            | True               |
+| T0 vs T2 |           0.777778  |         0.00305469 |      0.226806   |       1.32875   | True            | True               |
+| T1 vs T2 |           0.22      |         0.702924   |     -0.330971   |       0.770971  | False           | False              |
 
-### Comparaciones vs Referencia R
-| par     |   diferencia_medias |   p_valor_ajustado |   ic95_inferior |   ic95_superior | significativo   | vs_referencia_R   |
-|:--------|--------------------:|-------------------:|----------------:|----------------:|:----------------|:------------------|
-| R vs T0 |          -0.632222  |          0.0194982 |       -1.18319  |      -0.0812508 | True            | True              |
-| R vs T1 |          -0.0744444 |          0.982927  |       -0.625416 |       0.476527  | False           | True              |
-| R vs T2 |           0.145556  |          0.890102  |       -0.405416 |       0.696527  | False           | True              |
+### Comparaciones vs Control T0
+| par      |   diferencia_medias |   p_valor_ajustado |   ic95_inferior |   ic95_superior | significativo   | vs_referencia_T0   |
+|:---------|--------------------:|-------------------:|----------------:|----------------:|:----------------|:-------------------|
+| R vs T0  |           -0.632222 |         0.0194982  |     -1.18319    |      -0.0812508 | True            | True               |
+| T0 vs T1 |            0.557778 |         0.0463564  |      0.00680639 |       1.10875   | True            | True               |
+| T0 vs T2 |            0.777778 |         0.00305469 |      0.226806   |       1.32875   | True            | True               |
 
 ## Documentación de variables derivadas
 ---
@@ -165,7 +165,7 @@ Dado un solo cultivo por celda trt × bloque, el término de interacción no pue
 
 ### Post-hoc -> Tukey
 **Fuente:** `pipeline/bdca/comparaciones.py -> posthoc_tukey`
-**Fórmula/Justificación:** Tukey HSD por pares de tratamientos (statsmodels.pairwise_tukeyhsd) con columna 'vs_referencia_R'
+**Fórmula/Justificación:** Tukey HSD por pares de tratamientos (statsmodels.pairwise_tukeyhsd) con columna 'vs_referencia_T0'
 
 ### Supuestos -> tabla
 **Fuente:** `pipeline/bdca/supuestos.py -> analisis_supuestos`

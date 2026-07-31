@@ -7,7 +7,7 @@ RCBD (bloque aleatorizado) de una sola respuesta (rendimiento):
 - eda: exploración descriptiva por tratamiento y distribución (fase 4)
 - supuestos: verificación de supuestos del modelo de bloques (fase 6)
 - modelos: análisis inferencial de bloques (ANOVA clásico + LMM + ICC) (fase 7)
-- comparaciones: comparación múltiple post-hoc (Tukey HSD, pares vs referencia R) (fase 8)
+- comparaciones: comparación múltiple post-hoc (Tukey HSD, pares vs control T0) (fase 8)
 - informe: generación del informe final con resumen del diseño RCBD (fase 12)
 
 El notebook orquestador ``bdca/analisis_bdca.ipynb`` importa este paquete.

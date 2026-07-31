@@ -171,18 +171,18 @@ def _generar_reporte_lmm(resultado_lmm: dict) -> str:
 def _generar_reporte_posthoc(resultado_posthoc: pd.DataFrame) -> str:
     """Genera la sección MD del informe para comparaciones post-hoc Tukey HSD.
 
-    Resalta las comparaciones vs la referencia R.
+    Resalta las comparaciones vs el control T0 (sin tratar).
     """
     secciones = ["## Comparaciones múltiples post-hoc Tukey HSD", "---"]
 
-    secciones.append("\n### Resultados Tukey HSD (referencia: R)")
+    secciones.append("\n### Resultados Tukey HSD (referencia: T0, control sin tratar)")
     with pd.option_context("display.max_columns", None, "display.width", 180):
         secciones.append(resultado_posthoc.to_markdown(index=False))
 
-    # Filtrar para mostrar solo las comparaciones vs R
-    vs_r = resultado_posthoc[resultado_posthoc["vs_referencia_R"] == True]
+    # Filtrar para mostrar solo las comparaciones vs T0
+    vs_r = resultado_posthoc[resultado_posthoc["vs_referencia_T0"] == True]
     if not vs_r.empty:
-        secciones.append("\n### Comparaciones vs Referencia R")
+        secciones.append("\n### Comparaciones vs Control T0")
         with pd.option_context("display.max_columns", None, "display.width", 180):
             secciones.append(vs_r.to_markdown(index=False))
 
@@ -197,7 +197,7 @@ def _documentar_derivados() -> str:
         ("EDA -> medias, IC95%", "pipeline/bdca/eda.py -> resumen_descriptivo", "Cada tratamiento: media de yield, IC95 via t de Student (df=n-1)"),
         ("ANOVA -> eta2 parcial", "pipeline/bdca/modelos.py -> _calcular_eta2_parcial", "Eta2 parcial = SS_efecto / (SS_efecto + SS_residual)"),
         ("LMM -> ICC", "pipeline/bdca/modelos.py -> lmm_bloques", "ICC = var_bloque / (var_bloque + var_residual) para estimar correlación intra-clase de bloque"),
-        ("Post-hoc -> Tukey", "pipeline/bdca/comparaciones.py -> posthoc_tukey", "Tukey HSD por pares de tratamientos (statsmodels.pairwise_tukeyhsd) con columna 'vs_referencia_R'"),
+        ("Post-hoc -> Tukey", "pipeline/bdca/comparaciones.py -> posthoc_tukey", "Tukey HSD por pares de tratamientos (statsmodels.pairwise_tukeyhsd) con columna 'vs_referencia_T0'"),
         ("Supuestos -> tabla", "pipeline/bdca/supuestos.py -> analisis_supuestos", "Tabla de supuestos de normalidad (Shapiro-Wilk), homocedasticidad (Levene), independencia serial (Durbin-Watson)"),
     ]
 

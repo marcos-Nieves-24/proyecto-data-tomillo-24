@@ -1,8 +1,8 @@
 """Fase 3.6: Comparaciones múltiples post-hoc Tukey HSD entre tratamientos para rendimiento BDCA.
 
 Implementa `posthoc_tukey(df)`: Tukey HSD para los pares de tratamientos (6 pares),
-columna interpretativa explícita ``vs_referencia_R`` por par (comparando cada
-T0/T1/T2 vs R). Sin Dunnett, sin CLD.
+columna interpretativa explícita ``vs_referencia_T0`` por par (comparando cada
+tratamiento R/T1/T2 vs T0, el control sin tratar). Sin Dunnett, sin CLD.
 
 Protege contra errores: funciona cuando `statsmodels` está disponible; si no,
 levanta ImportError con un mensaje claro.
@@ -25,12 +25,12 @@ def posthoc_tukey(df: pd.DataFrame) -> pd.DataFrame:
     """Tukey HSD entre tratamientos para rendimiento BDCA.
 
     Ajusta el test de Tukey HSD de statsmodels y devuelve un DataFrame con:
-        • par: etiqueta como "T0 vs R", "T1 vs R", etc.
-        • diferencia_medias: media(T) - media(R)
+        • par: etiqueta como "R vs T0", "T1 vs T0", etc.
+        • diferencia_medias: media(tratamiento) - media(T0)
         • p_valor_ajustado: p-value ajustado de Tukey
         • ic95_inferior, ic95_superior: intervalo de confianza del 95%
         • significativo: True si p <= 0.05
-        • vs_referencia_R: booleano indicando si este par compara vs R
+        • vs_referencia_T0: booleano indicando si este par compara vs T0 (control)
 
     Además guarda la figura ``posthoc_tukey_pares`` (Tukey plot) en
     ``bdca/resultados/figuras/``. El DataFrame resultante se guarda como
@@ -41,12 +41,12 @@ def posthoc_tukey(df: pd.DataFrame) -> pd.DataFrame:
 
     # Ordenar tratamientos para consistencia (R, T0, T1, T2)
     orden = sorted(df["trt"].unique())
-    # Asegurar que R esté presente como referencia
-    if "R" not in orden:
-        warnings.warn("R no encontrado en trt; usando primera categoría como referencia.")
+    # Asegurar que T0 (control sin tratar) esté presente como referencia
+    if "T0" not in orden:
+        warnings.warn("T0 no encontrado en trt; usando primera categoría como referencia.")
         referencia = orden[0]
     else:
-        referencia = "R"
+        referencia = "T0"
 
     # Tukey HSD con API endog + groups (misma que pipeline/comparaciones.py).
     # `yield` es palabra reservada de Python: se cita como columna del df.
@@ -58,7 +58,7 @@ def posthoc_tukey(df: pd.DataFrame) -> pd.DataFrame:
 
     filas = []
     for i, (a, b) in enumerate(pares):
-        # Determinar si este par involucra R
+        # Determinar si este par involucra T0 (control)
         vs_ref = (a == referencia) or (b == referencia)
 
         filas.append({
@@ -68,7 +68,7 @@ def posthoc_tukey(df: pd.DataFrame) -> pd.DataFrame:
             "ic95_inferior": float(tukey.confint[i, 0]),
             "ic95_superior": float(tukey.confint[i, 1]),
             "significativo": bool(tukey.reject[i]),
-            "vs_referencia_R": vs_ref,
+            "vs_referencia_T0": vs_ref,
         })
 
     resultado = pd.DataFrame(filas)
@@ -85,7 +85,7 @@ def posthoc_tukey(df: pd.DataFrame) -> pd.DataFrame:
     print("=" * 72)
     print("FASE 3.6 - Comparaciones múltiples post-hoc Tukey HSD (BDCA)")
     print("=" * 72)
-    print("Referencia: R (control).")
+    print("Referencia: T0 (control sin tratar).")
     with pd.option_context("display.max_columns", None, "display.width", 200):
         print(resultado.to_string(index=False))
 

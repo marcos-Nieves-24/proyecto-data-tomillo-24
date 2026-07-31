@@ -1212,18 +1212,18 @@ def main_bdca() -> None:
         if icc is not None:
             icc_txt = f"<p>El <strong>ICC = {icc:.3f}</strong> indica que el bloque explica una parte importante de la variación total (variabilidad espacial del ensayo).</p>"
 
-    # Interpretación por pares vs R
+    # Interpretación por pares vs T0 (control sin tratar)
     pares_r = ""
     if ph is not None:
-        vs_r = ph[ph["vs_referencia_R"] == True]  # noqa: E712
+        vs_r = ph[ph["vs_referencia_T0"] == True]  # noqa: E712
         filas_r = ""
         for _, rw in vs_r.iterrows():
             estado = "difiere" if rw["significativo"] else "no difiere"
             filas_r += (
                 f"<tr><td><strong>{rw['par']}</strong></td><td class='num'>{es_num(rw['diferencia_medias'], 3)}</td>"
-                f"<td class='num'>{es_p(rw['p_valor_ajustado'])}</td><td>{estado} de R</td></tr>"
+                f"<td class='num'>{es_p(rw['p_valor_ajustado'])}</td><td>{estado} de T0</td></tr>"
             )
-        pares_r = f"<table><thead><tr><th>Par</th><th>Diferencia</th><th>p ajustado</th><th>vs R</th></tr></thead><tbody>{filas_r}</tbody></table>"
+        pares_r = f"<table><thead><tr><th>Par</th><th>Diferencia</th><th>p ajustado</th><th>vs T0</th></tr></thead><tbody>{filas_r}</tbody></table>"
 
     css = CSS
     vuelta_hub = "../index.html"
@@ -1273,21 +1273,24 @@ def main_bdca() -> None:
     <h1 class="titulo-hero">Diseño de bloques completos al azar (BDCA)</h1>
     <p class="subtitulo-hero">Comparación del rendimiento (<em>yield</em>) entre 4 tratamientos
     (R, T0, T1, T2) en 9 bloques completos, con modelo mixto de bloque aleatorio,
-    ANOVA clásico y Tukey HSD contra la referencia R.</p>
+    ANOVA clásico y Tukey HSD contra el control T0.</p>
     <div class="grid-cifras">{hero_cifras}</div>
   </section>
 
   <!-- ================= SECCION 2: EL ENSAYO ================= -->
   <section id="desafio" class="seccion ancla">
     <h2 class="seccion-titulo"><span class="num">2</span>El ensayo</h2>
-    <p class="lead">Los datos provienen del ensayo de Jenkyn sobre el control del mildiu (mildeo)
-    en un cultivo, con parcelas dispuestas en <strong>bloques completos al azar</strong>.
-    Se registran 36 parcelas (9 bloques × 4 tratamientos) y la variable respuesta es el
-    <strong>rendimiento (<em>yield</em>)</strong> por parcela, con una observación por celda
-    tratamiento × bloque.</p>
-    <p>Los 4 tratamientos son: <strong>R</strong> (control), <strong>T0</strong>, <strong>T1</strong>
-    y <strong>T2</strong>. La variabilidad espacial del terreno se controla agrupando las parcelas en
-    9 bloques, dentro de cada uno de los cuales los 4 tratamientos aparecen una única vez.</p>
+    <p class="lead">Los datos provienen del ensayo de Jenkyn sobre el control del mildeo/oídio,
+    un hongo patógeno foliar que afecta a los cereales (cebada o trigo). El objetivo es evaluar
+    si distintos esquemas de aplicación de fungicida protegen el rendimiento del cultivo.
+    Las parcelas se dispusieron en <strong>bloques completos al azar</strong>: 36 parcelas
+    (9 bloques × 4 tratamientos), con el <strong>rendimiento (<em>yield</em>)</strong> como
+    variable respuesta proxy — si el fungicida controla el mildeo, se espera mayor rendimiento.</p>
+    <p>Los 4 tratamientos son: <strong>T0</strong> (sin tratar, control — la enfermedad progresa
+    libremente), <strong>T1</strong> (aspersión temprana), <strong>T2</strong> (aspersión tardía)
+    y <strong>R</strong> (aspersión repetida: temprana + tardía). La variabilidad espacial del
+    terreno se controla agrupando las parcelas en 9 bloques, dentro de cada uno de los cuales los
+    4 tratamientos aparecen una única vez.</p>
     <div class="que-significa">
       <div class="titulo-tarjeta">Qué significa</div>
       <p>El bloque es la unidad de control de la heterogeneidad espacial: si el ICC es alto,
@@ -1316,7 +1319,7 @@ def main_bdca() -> None:
     <tr><td><strong>Supuestos</strong></td><td>Shapiro-Wilk, Levene, Durbin-Watson</td><td>Ruta paramétrica</td></tr>
     <tr><td><strong>Modelo primario</strong></td><td>LMM con bloque aleatorio (REML)</td><td>ICC reportado</td></tr>
     <tr><td><strong>Complemento</strong></td><td>ANOVA clásico de bloques (typ=2)</td><td>F trat = 28,77; p &lt; 0,001; η²p = 0,78</td></tr>
-    <tr><td><strong>Post-hoc</strong></td><td>Tukey HSD (6 pares, vs R)</td><td>Contrastes vs referencia R</td></tr>
+    <tr><td><strong>Post-hoc</strong></td><td>Tukey HSD (6 pares, vs T0)</td><td>Contrastes contra el control T0</td></tr>
     </tbody>
     </table>
   </section>
@@ -1343,7 +1346,7 @@ def main_bdca() -> None:
     {html_figura_bloque("Tukey HSD", f["tukey"], "Diferencias de medias por par con IC95%; en azul los pares significativos, en gris los no significativos. La línea punteada marca la ausencia de diferencia.", "C")}
     {html_posthoc}
 
-    <h3 class="sub-seccion">Contrastes contra la referencia R</h3>
+    <h3 class="sub-seccion">Contrastes contra el control T0</h3>
     {pares_r}
   </section>
 
@@ -1354,7 +1357,7 @@ def main_bdca() -> None:
     documentar los supuestos (normalidad, homocedasticidad e independencia de residuos).
     El modelo trata el bloque como efecto aleatorio (LMM, REML) y reporta el ICC;
     el ANOVA clásico de bloques complementa la lectura. Las comparaciones
-    post-hoc con Tukey HSD interpretan cada par contra la referencia R.</p>
+    post-hoc con Tukey HSD interpretan cada par contra el control T0.</p>
     <div class="que-significa">
       <div class="titulo-tarjeta">Limitaciones</div>
       <p>Con una observación por celda tratamiento × bloque, la aditividad no es testeable:
