@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Informe factorial Snijders</title>
+<style>
+body { font-family: sans-serif; max-width: 900px; margin: 2em auto; line-height: 1.5; color: #222; }
+h1, h2, h3 { color: #143; }
+table { border-collapse: collapse; margin: 1em 0; }
+td, th { border: 1px solid #ccc; padding: 4px 10px; }
+blockquote { border-left: 4px solid #ccc; margin-left: 0; padding-left: 1em; color: #555; }
+code { background: #f4f4f4; padding: 1px 4px; }
+</style>
+</head>
+<body>
+<h1>Análisis factorial: genotipo de trigo × cepa de Fusarium (Snijders)</h1>
+
+<h2>1. Contexto y objetivo</h2>
+
+<p>Se analiza la severidad de enfermedad (<code>y</code>, mayor valor = mayor severidad = menor resistencia)</p>
+<p>de 17 genotipos de trigo frente a 4 cepas de *Fusarium* spp., en un diseño factorial</p>
+<p>17 × 4 × 3 con los tres años (1986, 1987, 1988) como factor de bloqueo. El objetivo es</p>
+<p>comparar la agresividad relativa de las cepas y la susceptibilidad relativa de los genotipos,</p>
+<p>evaluar la interacción genotipo × cepa y cuantificar la incertidumbre de las estimaciones.</p>
+
+<blockquote>Nota de terminología: ningún genotipo se clasifica como «resistente» o «susceptible» en</blockquote>
+<blockquote>términos absolutos, dado que no se dispone de un umbral validado de resistencia. Se emplean</blockquote>
+<blockquote>los términos de «menor severidad relativa» y «mayor severidad relativa».</blockquote>
+
+<h2>2. Auditoría de datos</h2>
+
+<p>Fuente: `FACTORIAL_Snijders_Fusarium_genotipo_cepa.csv` (204 filas). Las columnas son</p>
+<p>`gen` (genotipo), `strain` (cepa), `year` (año) e `y` (severidad). No se imputó ni modificó</p>
+<p>ninguna observación.</p>
+
+<li>Diseño balanceado: 204 = 17 genotipos × 4 cepas × 3 años, exactamente 1 observación por celda.</li>
+<li>Sin valores faltantes, sin filas duplicadas, sin valores imposibles (y ∈ [0.1, 69.3], todos en [0, 100]).</li>
+<li>Detalle completo en `tablas/auditoria.csv`.</li>
+
+<h2>3. Estadísticos descriptivos</h2>
+
+<p>Medias ordenadas de mayor a menor severidad. IC95 basado en distribución t (columna `se`,</p>
+<p>error estándar). Tablas completas en `tablas/medias_por_cepa.csv` y `tablas/medias_por_gen.csv`.</p>
+
+<h3>3.1 Por cepa</h3>
+
+<tr><td>Cepa</td><td>Media</td><td>SE</td><td>IC95</td></tr>
+<tr><td>F39</td><td>24.30</td><td>2.83</td><td>[18.61, 30.00]</td></tr>
+<tr><td>F436</td><td>10.41</td><td>1.37</td><td>[7.65, 13.17]</td></tr>
+<tr><td>F329</td><td>6.36</td><td>0.95</td><td>[4.46, 8.27]</td></tr>
+<tr><td>F348</td><td>5.72</td><td>0.96</td><td>[3.79, 7.66]</td></tr>
+
+<h3>3.2 Por genotipo (10 de mayor severidad)</h3>
+
+<tr><td>Genotipo</td><td>Media</td><td>SE</td><td>IC95</td></tr>
+<tr><td>SVP72005-20-3-1</td><td>26.06</td><td>5.41</td><td>[14.16, 37.96]</td></tr>
+<tr><td>SVP75059-32</td><td>24.83</td><td>4.94</td><td>[13.95, 35.72]</td></tr>
+<tr><td>Nautica</td><td>22.99</td><td>5.03</td><td>[11.93, 34.06]</td></tr>
+<tr><td>SVP75059-46</td><td>18.98</td><td>5.29</td><td>[7.33, 30.64]</td></tr>
+<tr><td>SVP73012-1-2-3</td><td>18.56</td><td>5.14</td><td>[7.25, 29.87]</td></tr>
+<tr><td>SVP73016-2-4</td><td>16.09</td><td>4.34</td><td>[6.53, 25.65]</td></tr>
+<tr><td>SVP73030-8-1-I</td><td>13.64</td><td>4.93</td><td>[2.79, 24.49]</td></tr>
+<tr><td>SVP75059-28</td><td>9.08</td><td>4.36</td><td>[-0.52, 18.68]</td></tr>
+<tr><td>SVP77079-15</td><td>9.03</td><td>3.13</td><td>[2.15, 15.90]</td></tr>
+<tr><td>SVP72003-4-2-4</td><td>7.63</td><td>2.03</td><td>[3.16, 12.11]</td></tr>
+<tr><td>SVP77078-30</td><td>6.81</td><td>1.73</td><td>[2.99, 10.62]</td></tr>
+<tr><td>Saiga</td><td>6.73</td><td>1.32</td><td>[3.82, 9.65]</td></tr>
+<tr><td>SVP77076-1</td><td>4.23</td><td>0.99</td><td>[2.06, 6.41]</td></tr>
+<tr><td>SVP77076-38</td><td>3.97</td><td>1.50</td><td>[0.67, 7.28]</td></tr>
+<tr><td>Arina</td><td>3.94</td><td>1.00</td><td>[1.74, 6.15]</td></tr>
+<tr><td>SVP77076-4</td><td>3.69</td><td>1.20</td><td>[1.06, 6.32]</td></tr>
+<tr><td>SVP72017-17-5-10</td><td>2.62</td><td>0.55</td><td>[1.40, 3.84]</td></tr>
+
+<h2>4. Modelo estadístico</h2>
+
+<p>Se ajustó un modelo lineal `y ~ C(gen) + C(strain) + C(year) + C(gen):C(strain)`. El factor `year` se incorpora como factor de bloqueo/replicación: dado que existe una sola observación por combinación genotipo × cepa, los tres años proporcionan la replicación necesaria para estimar el error, pero el residual confunde la variación entre años con el error puro (no existe término de error puro dentro de la celda genotipo × cepa). La interacción genotipo × cepa es estimable (48 gl).</p>
+
+<p>Fórmula empleada: `y ~ C(gen) + C(strain) + C(year) + C(gen):C(strain)`. Tabla ANOVA en `tablas/anova.csv`. La columna `eta_cuad`</p>
+<p>se calcula como `sum_sq` del término / `sum_sq` total (variación total explicada por el término).</p>
+
+<tr><td>Término</td><td>gl</td><td>Sum sq</td><td>F</td><td>p</td><td>Significativo</td><td>η²</td></tr>
+<tr><td>Genotipo</td><td>16</td><td>12368.2</td><td>8.75</td><td>0.00</td><td>Si</td><td>0.298</td></tr>
+<tr><td>Cepa</td><td>3</td><td>11461.1</td><td>43.22</td><td>0.00</td><td>Si</td><td>0.277</td></tr>
+<tr><td>Año</td><td>2</td><td>454.5</td><td>2.57</td><td>0.08</td><td>No</td><td>0.011</td></tr>
+<tr><td>Genotipo x Cepa</td><td>48</td><td>5308.2</td><td>1.25</td><td>0.16</td><td>No</td><td>0.128</td></tr>
+<tr><td>Residual</td><td>134</td><td>11843.7</td><td>nan</td><td>nan</td><td>No</td><td>0.286</td></tr>
+
+<h2>5. Comparaciones múltiples (Tukey HSD)</h2>
+
+<p>Comparaciones por pares con ajuste de Tukey (α = 0.05) sobre las medias de cepa y de genotipo.</p>
+<p>Tablas completas en `tablas/posthoc_cepas.csv` y `tablas/posthoc_gen.csv`.</p>
+
+<h3>5.1 Pares entre cepas</h3>
+
+<tr><td>Cepa A</td><td>Cepa B</td><td>Diferencia</td><td>p-ajustada</td><td>Significativo</td></tr>
+<tr><td>F329</td><td>F348</td><td>-0.64</td><td>0.99</td><td>False</td></tr>
+<tr><td>F329</td><td>F39</td><td>17.94</td><td>0.00</td><td>True</td></tr>
+<tr><td>F329</td><td>F436</td><td>4.05</td><td>0.34</td><td>False</td></tr>
+<tr><td>F348</td><td>F39</td><td>18.58</td><td>0.00</td><td>True</td></tr>
+<tr><td>F348</td><td>F436</td><td>4.69</td><td>0.22</td><td>False</td></tr>
+<tr><td>F39</td><td>F436</td><td>-13.89</td><td>0.00</td><td>True</td></tr>
+
+<h3>5.2 Pares entre genotipos</h3>
+
+<tr><td>Genotipo A</td><td>Genotipo B</td><td>Diferencia</td><td>p-ajustada</td><td>Significativo</td></tr>
+<tr><td>Arina</td><td>Nautica</td><td>19.05</td><td>0.02</td><td>True</td></tr>
+<tr><td>Arina</td><td>SVP72003-4-2-4</td><td>3.69</td><td>1.00</td><td>False</td></tr>
+<tr><td>Arina</td><td>SVP72005-20-3-1</td><td>22.12</td><td>0.00</td><td>True</td></tr>
+<tr><td>Arina</td><td>SVP72017-17-5-10</td><td>-1.32</td><td>1.00</td><td>False</td></tr>
+<tr><td>Arina</td><td>SVP73012-1-2-3</td><td>14.62</td><td>0.26</td><td>False</td></tr>
+<tr><td>Arina</td><td>SVP73016-2-4</td><td>12.15</td><td>0.59</td><td>False</td></tr>
+<tr><td>Arina</td><td>SVP73030-8-1-I</td><td>9.70</td><td>0.89</td><td>False</td></tr>
+<tr><td>Arina</td><td>SVP75059-28</td><td>5.14</td><td>1.00</td><td>False</td></tr>
+<tr><td>Arina</td><td>SVP75059-32</td><td>20.89</td><td>0.01</td><td>True</td></tr>
+<tr><td>Arina</td><td>SVP75059-46</td><td>15.04</td><td>0.22</td><td>False</td></tr>
+<tr><td>Arina</td><td>SVP77076-1</td><td>0.29</td><td>1.00</td><td>False</td></tr>
+<tr><td>Arina</td><td>SVP77076-38</td><td>0.03</td><td>1.00</td><td>False</td></tr>
+<tr><td>Arina</td><td>SVP77076-4</td><td>-0.25</td><td>1.00</td><td>False</td></tr>
+<tr><td>Arina</td><td>SVP77078-30</td><td>2.87</td><td>1.00</td><td>False</td></tr>
+<tr><td>Arina</td><td>SVP77079-15</td><td>5.08</td><td>1.00</td><td>False</td></tr>
+<tr><td>Arina</td><td>Saiga</td><td>2.79</td><td>1.00</td><td>False</td></tr>
+<tr><td>Nautica</td><td>SVP72003-4-2-4</td><td>-15.36</td><td>0.19</td><td>False</td></tr>
+<tr><td>Nautica</td><td>SVP72005-20-3-1</td><td>3.07</td><td>1.00</td><td>False</td></tr>
+<tr><td>Nautica</td><td>SVP72017-17-5-10</td><td>-20.38</td><td>0.01</td><td>True</td></tr>
+<tr><td>Nautica</td><td>SVP73012-1-2-3</td><td>-4.43</td><td>1.00</td><td>False</td></tr>
+<tr><td>Nautica</td><td>SVP73016-2-4</td><td>-6.90</td><td>1.00</td><td>False</td></tr>
+<tr><td>Nautica</td><td>SVP73030-8-1-I</td><td>-9.35</td><td>0.92</td><td>False</td></tr>
+<tr><td>Nautica</td><td>SVP75059-28</td><td>-13.91</td><td>0.34</td><td>False</td></tr>
+<tr><td>Nautica</td><td>SVP75059-32</td><td>1.84</td><td>1.00</td><td>False</td></tr>
+<tr><td>Nautica</td><td>SVP75059-46</td><td>-4.01</td><td>1.00</td><td>False</td></tr>
+<tr><td>Nautica</td><td>SVP77076-1</td><td>-18.76</td><td>0.03</td><td>True</td></tr>
+<tr><td>Nautica</td><td>SVP77076-38</td><td>-19.02</td><td>0.02</td><td>True</td></tr>
+<tr><td>Nautica</td><td>SVP77076-4</td><td>-19.30</td><td>0.02</td><td>True</td></tr>
+<tr><td>Nautica</td><td>SVP77078-30</td><td>-16.18</td><td>0.13</td><td>False</td></tr>
+<tr><td>Nautica</td><td>SVP77079-15</td><td>-13.97</td><td>0.34</td><td>False</td></tr>
+<tr><td>Nautica</td><td>Saiga</td><td>-16.26</td><td>0.12</td><td>False</td></tr>
+<tr><td>SVP72003-4-2-4</td><td>SVP72005-20-3-1</td><td>18.43</td><td>0.04</td><td>True</td></tr>
+<tr><td>SVP72003-4-2-4</td><td>SVP72017-17-5-10</td><td>-5.02</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72003-4-2-4</td><td>SVP73012-1-2-3</td><td>10.93</td><td>0.76</td><td>False</td></tr>
+<tr><td>SVP72003-4-2-4</td><td>SVP73016-2-4</td><td>8.46</td><td>0.96</td><td>False</td></tr>
+<tr><td>SVP72003-4-2-4</td><td>SVP73030-8-1-I</td><td>6.01</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72003-4-2-4</td><td>SVP75059-28</td><td>1.45</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72003-4-2-4</td><td>SVP75059-32</td><td>17.20</td><td>0.07</td><td>False</td></tr>
+<tr><td>SVP72003-4-2-4</td><td>SVP75059-46</td><td>11.35</td><td>0.70</td><td>False</td></tr>
+<tr><td>SVP72003-4-2-4</td><td>SVP77076-1</td><td>-3.40</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72003-4-2-4</td><td>SVP77076-38</td><td>-3.66</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72003-4-2-4</td><td>SVP77076-4</td><td>-3.94</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72003-4-2-4</td><td>SVP77078-30</td><td>-0.82</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72003-4-2-4</td><td>SVP77079-15</td><td>1.39</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72003-4-2-4</td><td>Saiga</td><td>-0.90</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72005-20-3-1</td><td>SVP72017-17-5-10</td><td>-23.44</td><td>0.00</td><td>True</td></tr>
+<tr><td>SVP72005-20-3-1</td><td>SVP73012-1-2-3</td><td>-7.50</td><td>0.99</td><td>False</td></tr>
+<tr><td>SVP72005-20-3-1</td><td>SVP73016-2-4</td><td>-9.97</td><td>0.87</td><td>False</td></tr>
+<tr><td>SVP72005-20-3-1</td><td>SVP73030-8-1-I</td><td>-12.42</td><td>0.55</td><td>False</td></tr>
+<tr><td>SVP72005-20-3-1</td><td>SVP75059-28</td><td>-16.98</td><td>0.08</td><td>False</td></tr>
+<tr><td>SVP72005-20-3-1</td><td>SVP75059-32</td><td>-1.23</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72005-20-3-1</td><td>SVP75059-46</td><td>-7.08</td><td>0.99</td><td>False</td></tr>
+<tr><td>SVP72005-20-3-1</td><td>SVP77076-1</td><td>-21.82</td><td>0.00</td><td>True</td></tr>
+<tr><td>SVP72005-20-3-1</td><td>SVP77076-38</td><td>-22.08</td><td>0.00</td><td>True</td></tr>
+<tr><td>SVP72005-20-3-1</td><td>SVP77076-4</td><td>-22.37</td><td>0.00</td><td>True</td></tr>
+<tr><td>SVP72005-20-3-1</td><td>SVP77078-30</td><td>-19.25</td><td>0.02</td><td>True</td></tr>
+<tr><td>SVP72005-20-3-1</td><td>SVP77079-15</td><td>-17.03</td><td>0.08</td><td>False</td></tr>
+<tr><td>SVP72005-20-3-1</td><td>Saiga</td><td>-19.32</td><td>0.02</td><td>True</td></tr>
+<tr><td>SVP72017-17-5-10</td><td>SVP73012-1-2-3</td><td>15.94</td><td>0.14</td><td>False</td></tr>
+<tr><td>SVP72017-17-5-10</td><td>SVP73016-2-4</td><td>13.47</td><td>0.40</td><td>False</td></tr>
+<tr><td>SVP72017-17-5-10</td><td>SVP73030-8-1-I</td><td>11.03</td><td>0.75</td><td>False</td></tr>
+<tr><td>SVP72017-17-5-10</td><td>SVP75059-28</td><td>6.47</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72017-17-5-10</td><td>SVP75059-32</td><td>22.22</td><td>0.00</td><td>True</td></tr>
+<tr><td>SVP72017-17-5-10</td><td>SVP75059-46</td><td>16.37</td><td>0.11</td><td>False</td></tr>
+<tr><td>SVP72017-17-5-10</td><td>SVP77076-1</td><td>1.62</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72017-17-5-10</td><td>SVP77076-38</td><td>1.36</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72017-17-5-10</td><td>SVP77076-4</td><td>1.07</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72017-17-5-10</td><td>SVP77078-30</td><td>4.19</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72017-17-5-10</td><td>SVP77079-15</td><td>6.41</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP72017-17-5-10</td><td>Saiga</td><td>4.12</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP73012-1-2-3</td><td>SVP73016-2-4</td><td>-2.47</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP73012-1-2-3</td><td>SVP73030-8-1-I</td><td>-4.92</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP73012-1-2-3</td><td>SVP75059-28</td><td>-9.47</td><td>0.91</td><td>False</td></tr>
+<tr><td>SVP73012-1-2-3</td><td>SVP75059-32</td><td>6.28</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP73012-1-2-3</td><td>SVP75059-46</td><td>0.42</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP73012-1-2-3</td><td>SVP77076-1</td><td>-14.32</td><td>0.29</td><td>False</td></tr>
+<tr><td>SVP73012-1-2-3</td><td>SVP77076-38</td><td>-14.58</td><td>0.26</td><td>False</td></tr>
+<tr><td>SVP73012-1-2-3</td><td>SVP77076-4</td><td>-14.87</td><td>0.23</td><td>False</td></tr>
+<tr><td>SVP73012-1-2-3</td><td>SVP77078-30</td><td>-11.75</td><td>0.65</td><td>False</td></tr>
+<tr><td>SVP73012-1-2-3</td><td>SVP77079-15</td><td>-9.53</td><td>0.90</td><td>False</td></tr>
+<tr><td>SVP73012-1-2-3</td><td>Saiga</td><td>-11.82</td><td>0.64</td><td>False</td></tr>
+<tr><td>SVP73016-2-4</td><td>SVP73030-8-1-I</td><td>-2.45</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP73016-2-4</td><td>SVP75059-28</td><td>-7.01</td><td>0.99</td><td>False</td></tr>
+<tr><td>SVP73016-2-4</td><td>SVP75059-32</td><td>8.74</td><td>0.95</td><td>False</td></tr>
+<tr><td>SVP73016-2-4</td><td>SVP75059-46</td><td>2.89</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP73016-2-4</td><td>SVP77076-1</td><td>-11.86</td><td>0.63</td><td>False</td></tr>
+<tr><td>SVP73016-2-4</td><td>SVP77076-38</td><td>-12.12</td><td>0.59</td><td>False</td></tr>
+<tr><td>SVP73016-2-4</td><td>SVP77076-4</td><td>-12.40</td><td>0.55</td><td>False</td></tr>
+<tr><td>SVP73016-2-4</td><td>SVP77078-30</td><td>-9.28</td><td>0.92</td><td>False</td></tr>
+<tr><td>SVP73016-2-4</td><td>SVP77079-15</td><td>-7.07</td><td>0.99</td><td>False</td></tr>
+<tr><td>SVP73016-2-4</td><td>Saiga</td><td>-9.36</td><td>0.92</td><td>False</td></tr>
+<tr><td>SVP73030-8-1-I</td><td>SVP75059-28</td><td>-4.56</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP73030-8-1-I</td><td>SVP75059-32</td><td>11.19</td><td>0.73</td><td>False</td></tr>
+<tr><td>SVP73030-8-1-I</td><td>SVP75059-46</td><td>5.34</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP73030-8-1-I</td><td>SVP77076-1</td><td>-9.41</td><td>0.91</td><td>False</td></tr>
+<tr><td>SVP73030-8-1-I</td><td>SVP77076-38</td><td>-9.67</td><td>0.89</td><td>False</td></tr>
+<tr><td>SVP73030-8-1-I</td><td>SVP77076-4</td><td>-9.95</td><td>0.87</td><td>False</td></tr>
+<tr><td>SVP73030-8-1-I</td><td>SVP77078-30</td><td>-6.83</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP73030-8-1-I</td><td>SVP77079-15</td><td>-4.62</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP73030-8-1-I</td><td>Saiga</td><td>-6.91</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP75059-28</td><td>SVP75059-32</td><td>15.75</td><td>0.16</td><td>False</td></tr>
+<tr><td>SVP75059-28</td><td>SVP75059-46</td><td>9.90</td><td>0.87</td><td>False</td></tr>
+<tr><td>SVP75059-28</td><td>SVP77076-1</td><td>-4.85</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP75059-28</td><td>SVP77076-38</td><td>-5.11</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP75059-28</td><td>SVP77076-4</td><td>-5.39</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP75059-28</td><td>SVP77078-30</td><td>-2.27</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP75059-28</td><td>SVP77079-15</td><td>-0.06</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP75059-28</td><td>Saiga</td><td>-2.35</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP75059-32</td><td>SVP75059-46</td><td>-5.85</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP75059-32</td><td>SVP77076-1</td><td>-20.60</td><td>0.01</td><td>True</td></tr>
+<tr><td>SVP75059-32</td><td>SVP77076-38</td><td>-20.86</td><td>0.01</td><td>True</td></tr>
+<tr><td>SVP75059-32</td><td>SVP77076-4</td><td>-21.14</td><td>0.01</td><td>True</td></tr>
+<tr><td>SVP75059-32</td><td>SVP77078-30</td><td>-18.02</td><td>0.04</td><td>True</td></tr>
+<tr><td>SVP75059-32</td><td>SVP77079-15</td><td>-15.81</td><td>0.15</td><td>False</td></tr>
+<tr><td>SVP75059-32</td><td>Saiga</td><td>-18.10</td><td>0.04</td><td>True</td></tr>
+<tr><td>SVP75059-46</td><td>SVP77076-1</td><td>-14.75</td><td>0.25</td><td>False</td></tr>
+<tr><td>SVP75059-46</td><td>SVP77076-38</td><td>-15.01</td><td>0.22</td><td>False</td></tr>
+<tr><td>SVP75059-46</td><td>SVP77076-4</td><td>-15.29</td><td>0.19</td><td>False</td></tr>
+<tr><td>SVP75059-46</td><td>SVP77078-30</td><td>-12.18</td><td>0.59</td><td>False</td></tr>
+<tr><td>SVP75059-46</td><td>SVP77079-15</td><td>-9.96</td><td>0.87</td><td>False</td></tr>
+<tr><td>SVP75059-46</td><td>Saiga</td><td>-12.25</td><td>0.58</td><td>False</td></tr>
+<tr><td>SVP77076-1</td><td>SVP77076-38</td><td>-0.26</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP77076-1</td><td>SVP77076-4</td><td>-0.54</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP77076-1</td><td>SVP77078-30</td><td>2.58</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP77076-1</td><td>SVP77079-15</td><td>4.79</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP77076-1</td><td>Saiga</td><td>2.50</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP77076-38</td><td>SVP77076-4</td><td>-0.28</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP77076-38</td><td>SVP77078-30</td><td>2.83</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP77076-38</td><td>SVP77079-15</td><td>5.05</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP77076-38</td><td>Saiga</td><td>2.76</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP77076-4</td><td>SVP77078-30</td><td>3.12</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP77076-4</td><td>SVP77079-15</td><td>5.33</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP77076-4</td><td>Saiga</td><td>3.04</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP77078-30</td><td>SVP77079-15</td><td>2.22</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP77078-30</td><td>Saiga</td><td>-0.07</td><td>1.00</td><td>False</td></tr>
+<tr><td>SVP77079-15</td><td>Saiga</td><td>-2.29</td><td>1.00</td><td>False</td></tr>
+
+<h2>6. Interpretación biológica</h2>
+
+<li>Agresividad relativa de las cepas: la cepa F39 mostró la mayor severidad media</li>
+<p>  (24.30), y la cepa F348 la menor</p>
+<p>  (5.72). La diferencia entre cepas fue</p>
+<p>  estadísticamente significativa (F = 43.22),</p>
+<p>  lo que indica diferencias reales de agresividad entre aislados.</p>
+<li>Susceptibilidad relativa de los genotipos: el genotipo SVP72005-20-3-1 presentó la mayor</li>
+<p>  severidad media y el genotipo SVP72017-17-5-10 la menor. La diferencia entre genotipos fue</p>
+<p>  significativa (F = 8.75),</p>
+<p>  reflejando un gradiente de susceptibilidad relativa en el material evaluado.</p>
+<li>Interacción genotipo × cepa: la interacción genotipo × cepa no resultó estadísticamente significativa al 5%, lo que sugiere que los efectos de cepa y genotipo actúan de forma aproximadamente aditiva. Cuando una interacción es significativa, el</li>
+<p>  ordenamiento de las cepas (o de los genotipos) no es uniforme y conviene interpretar los</p>
+<p>  efectos principales con cautela, priorizando las comparaciones dentro de cada nivel.</p>
+<li>Efecto del año: el factor `year` absorbe variación entre años; su significancia refleja</li>
+<p>  condiciones epidémicas distintas entre campañas, no un efecto de tratamiento.</p>
+
+<h2>7. Limitaciones</h2>
+
+<li>Sin replicación intra-celda: existe una sola observación por combinación genotipo × cepa</li>
+<p>  por año. No hay término de error puro dentro de la celda: el residuo del modelo mixtura la</p>
+<p>  variación entre años con el error experimental, de modo que los contrastes de significancia</p>
+<p>  dependen de esa supuesta homogeneidad. Se recomienda replicación intra-celda para un error puro.</p>
+<li>Estructura año-observación: `year` se trata como bloque fijo; no se modeló efecto aleatorio</li>
+<p>  de año ni su interacción con los tratamientos.</p>
+<li>Falta de correlación con dosis: no hay concentraciones, por lo que no procede estimación</li>
+<p>  de EC50/EC90.</p>
+<li>Clasificación absoluta de resistencia: no se emplea el término «resistente»; solo se</li>
+<p>  describe severidad relativa.</p>
+
+<h2>8. Archivos generados</h2>
+
+<li>Tablas: `tablas/auditoria.csv`, `tablas/medias_por_cepa.csv`, `tablas/medias_por_gen.csv`,</li>
+<p>  `tablas/anova.csv`, `tablas/posthoc_cepas.csv`, `tablas/posthoc_gen.csv`</p>
+<li>Figuras: `figuras/boxplot_por_cepa.png`, `figuras/boxplot_por_gen.png`,</li>
+<p>  `figuras/interaccion_gen_cepa.png`</p>
+<li>Informe: `reportes/informe_factorial.md`</li>
+</body>
+</html>

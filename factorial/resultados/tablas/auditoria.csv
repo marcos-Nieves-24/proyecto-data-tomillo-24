@@ -1,0 +1,10 @@
+chequeo,resultado,ok
+filas totales,204,True
+n genotipos (17),17,True
+n cepas (4),4,True
+n anos (3),3,True
+combinacion gen x cepa x ano,"204 celdas, completo, replicas/celda=1",True
+valores faltantes,0,True
+filas duplicadas,0,True
+valores imposibles y<0 o y>100,0,True
+rango de y,"[0.1, 69.3]",True
