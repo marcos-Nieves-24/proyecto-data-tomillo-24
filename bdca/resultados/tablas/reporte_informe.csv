@@ -1,0 +1,8 @@
+seccion,descripcion,ruta_archivo,figuras_generadas,tipo_inferencia,fuente_datos,n_pares
+diseño,Resumen del diseño RCBD,/home/mniev/projects/proyecto_tomillo/bdca/resultados/reportes/informe_final.md,,,,
+auditoria,Resultados de auditoría de carga,/home/mniev/projects/proyecto_tomillo/bdca/resultados/reportes/informe_final.md,,,,
+eda,Tabla descriptiva y figuras exploratorias,,"['eda_boxplot_por_trt', 'eda_histogramas_por_trt', 'eda_qqplot_por_trt']",,,
+supuestos,Tabla de verificación de supuestos,,,parametrica,,
+anova,Tabla ANOVA clásico de bloques,,,,modelo OLS yield ~ C(trt) + C(block),
+lmm,Tabla de efectos fijos LMM y varianzas/ICC,,,,modelo mixto yield ~ C(trt) | block,
+posthoc,Resultados Tukey HSD (vs R),,,,,6.0

@@ -1,0 +1,4 @@
+supuesto,estadistico,p_valor,cumple
+Normalidad (Shapiro-Wilk),0.9816682443595401,0.8001653987555472,True
+Homocedasticidad (Levene),0.10221329492912941,0.9581590618805061,True
+Independencia serial (Durbin-Watson),2.0744285463962795,,True
