@@ -55,13 +55,13 @@ Chain strategy: feature-branch-chain
 
 ## Phase 5: Run bdca pipeline
 
-- [ ] 5.1 Run `PIPELINE_DISENO=bdca` end-to-end (notebook execution method pending — see Risks).
-- [ ] 5.2 Verify `bdca/resultados/{database,tablas,figuras,reportes,excel}` populated; notebook executes; page renders.
+- [x] 5.1 Run `PIPELINE_DISENO=bdca` end-to-end (notebook execution method pending — see Risks).
+- [x] 5.2 Verify `bdca/resultados/{database,tablas,figuras,reportes,excel}` populated; notebook executes; page renders.
 
 ## Phase 6: Regression & isolation verification
 
-- [ ] 6.1 DCA regression guard: env unset → regenerate `dca/analisis_dca.ipynb` + `pagina/dca/index.html`; `git diff` clean.
-- [ ] 6.2 Isolation: `git status` before/after bdca run — no file under `dca/` or `datos_crudos/dca/` created/modified.
+- [x] 6.1 DCA regression guard: env unset → regenerate `dca/analisis_dca.ipynb` + `pagina/dca/index.html`; `git diff` clean.
+- [x] 6.2 Isolation: `git status` before/after bdca run — no file under `dca/` or `datos_crudos/dca/` created/modified.
 
 ## Traceability (14 requirements / 23 scenarios)
 
