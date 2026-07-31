@@ -8,7 +8,9 @@ Modos de uso:
 
     python3 generar_pagina.py                    # pagina del DCA
     python3 generar_pagina.py --diseno dca       # idem, explicito
-    python3 generar_pagina.py --hub              # hub + placeholders BDCA/factorial
+    python3 generar_pagina.py --diseno bdca      # pagina del BDCA
+    python3 generar_pagina.py --diseno factorial # pagina del factorial (gen x cepa)
+    python3 generar_pagina.py --hub              # hub con las ventanas DCA/BDCA/factorial
 
 Solo lee de ``pipeline/`` y ``<diseno>/resultados/``; no escribe fuera de
 ``pagina/``.
@@ -1375,6 +1377,363 @@ def main_bdca() -> None:
     print(f"Tamaño: {sum(len(v) for v in f.values()) / 1024:.0f} KB de figuras embebidas.")
 
 
+# ---------------------------------------------------------------------------
+# Pagina Factorial (una respuesta: severidad y, gen × cepa, Snijders)
+# ---------------------------------------------------------------------------
+
+VERDE_FACT = "#009E73"
+
+ANOVA_FACT_TERM_LABEL = {
+    "C(gen)": "Genotipo",
+    "C(strain)": "Cepa",
+    "C(year)": "Año (bloque)",
+    "C(gen):C(strain)": "Genotipo × Cepa",
+    "Residual": "Residual",
+}
+
+ORDEN_CEPAS = ["F39", "F436", "F329", "F348"]
+
+
+def _factorial_tabla(nombre: str, **kw) -> pd.DataFrame | None:
+    """Lee una tabla de factorial/resultados/tablas; None si no existe."""
+    ruta = RAIZ / "factorial" / "resultados" / "tablas" / f"{nombre}.csv"
+    if not ruta.exists():
+        return None
+    return pd.read_csv(ruta, **kw)
+
+
+def _factorial_datos() -> pd.DataFrame:
+    """Lee el CSV crudo del ensayo factorial (gen, strain, year, y)."""
+    ruta = RAIZ / "FACTORIAL_Snijders_Fusarium_genotipo_cepa.csv"
+    return pd.read_csv(ruta)
+
+
+def fig_factorial_boxplot_cepa() -> go.Figure:
+    """Boxplot de severidad (y) por cepa de Fusarium desde el CSV crudo."""
+    df = _factorial_datos()
+    fig = go.Figure()
+    for cepa in ORDEN_CEPAS:
+        serie = df.loc[df["strain"] == cepa, "y"]
+        fig.add_trace(go.Box(
+            y=serie, name=cepa, boxpoints="all", jitter=0.3, pointpos=0,
+            line=dict(color=VERDE_FACT),
+            fillcolor="rgba(0,158,115,0.15)",
+            marker=dict(color=VERDE_FACT, size=5),
+            hovertemplate="%{y:.1f}<extra>%{x}</extra>",
+        ))
+    fig.update_layout(xaxis_title="Cepa de Fusarium", yaxis_title="Severidad (y)")
+    return _base_layout(fig, "Severidad de enfermedad por cepa de Fusarium")
+
+
+def fig_factorial_boxplot_gen() -> go.Figure:
+    """Boxplot de severidad (y) por genotipo, ordenado por media descendente."""
+    df = _factorial_datos()
+    medias = df.groupby("gen")["y"].mean().sort_values(ascending=False)
+    fig = go.Figure()
+    for g in medias.index:
+        serie = df.loc[df["gen"] == g, "y"]
+        fig.add_trace(go.Box(
+            y=serie, name=g, boxpoints="outliers",
+            line=dict(color=VERDE_FACT),
+            fillcolor="rgba(0,158,115,0.15)",
+            marker=dict(color=VERDE_FACT, size=5),
+            hovertemplate="%{y:.1f}<extra>%{x}</extra>",
+        ))
+    fig.update_layout(
+        xaxis_title="Genotipo de trigo", yaxis_title="Severidad (y)",
+        xaxis_tickangle=-45, height=540,
+    )
+    return _base_layout(fig, "Severidad de enfermedad por genotipo de trigo")
+
+
+def fig_factorial_medias_cepa(des: pd.DataFrame) -> go.Figure:
+    """Barras de severidad media por cepa con IC95%."""
+    df = des.copy()
+    df = df.set_index("cepa").loc[ORDEN_CEPAS].reset_index()
+    fig = go.Figure(go.Bar(
+        x=df["cepa"], y=df["media"],
+        error_y=dict(
+            type="data", symmetric=False,
+            array=df["ic95_sup"] - df["media"],
+            arrayminus=df["media"] - df["ic95_inf"],
+            visible=True, thickness=1.4, width=6, color="#444444",
+        ),
+        marker_color=VERDE_FACT,
+        text=[f"{v:.1f}" for v in df["media"]],
+        textposition="outside",
+        hovertemplate="%{y:.2f}<extra>%{x}</extra>",
+    ))
+    fig.update_layout(
+        xaxis_title="Cepa de Fusarium",
+        yaxis_title="Severidad media (y) ± IC 95%",
+        bargap=0.35,
+    )
+    return _base_layout(fig, "Severidad media por cepa con IC 95%")
+
+
+def html_tabla_auditoria(aud: pd.DataFrame) -> str:
+    """Tabla de auditoria en formato chequeo/resultado/ok."""
+    etiquetas = {
+        "filas totales": "Filas totales",
+        "n genotipos (17)": "Genotipos",
+        "n cepas (4)": "Cepas",
+        "n anos (3)": "Años",
+        "combinacion gen x cepa x ano": "Combinación gen × cepa × año",
+        "valores faltantes": "Valores faltantes",
+        "filas duplicadas": "Filas duplicadas",
+        "valores imposibles y<0 o y>100": "Valores imposibles (y < 0 o y > 100)",
+        "rango de y": "Rango de y",
+    }
+    filas = ""
+    for _, r in aud.iterrows():
+        ok = "Sí" if r["ok"] else "No"
+        filas += (f"<tr><td>{etiquetas.get(r['chequeo'], r['chequeo'])}</td>"
+                  f"<td>{r['resultado']}</td><td>{ok}</td></tr>")
+    return f"<table><thead><tr><th>Chequeo</th><th>Resultado</th><th>OK</th></tr></thead><tbody>{filas}</tbody></table>"
+
+
+def html_tabla_anova_factorial(anova: pd.DataFrame) -> str:
+    """Tabla ANOVA del factorial (columnas term,df,sum_sq,mean_sq,f,p,eta_cuad)."""
+    head = "<thead><tr><th>Fuente</th><th>gl</th><th>F</th><th>p</th><th>η²</th></tr></thead>"
+    filas = ""
+    for _, r in anova.iterrows():
+        fuente = ANOVA_FACT_TERM_LABEL.get(r["term"], r["term"])
+        if r["term"] == "Residual":
+            filas += (f"<tr><td>{fuente}</td><td class='num'>{r['df']:.0f}</td>"
+                      f"<td class='num'>—</td><td class='num'>—</td><td class='num'>—</td></tr>")
+        else:
+            filas += (f"<tr><td>{fuente}</td><td class='num'>{r['df']:.0f}</td>"
+                      f"<td class='num'>{es_num(r['f'], 2)}</td><td class='num'>{es_p(r['p'])}</td>"
+                      f"<td class='num'>{es_num(r['eta_cuad'], 3)}</td></tr>")
+    return f"<table>{head}<tbody>{filas}</tbody></table>"
+
+
+def html_tabla_posthoc_factorial(ph: pd.DataFrame) -> str:
+    """Tabla post-hoc Tukey del factorial (columnas grupo1,grupo2,meandiff,p_ajustada,lower,upper,significativo)."""
+    head = "<thead><tr><th>Par</th><th>Diferencia</th><th>IC 95%</th><th>p ajustado</th><th>Significativo</th></tr></thead>"
+    filas = ""
+    for _, r in ph.iterrows():
+        sig = "Sí" if r["significativo"] else "No"
+        filas += (f"<tr><td>{r['grupo1']} – {r['grupo2']}</td>"
+                  f"<td class='num'>{es_num(r['meandiff'], 2)}</td>"
+                  f"<td class='num'>{es_num(r['lower'], 2)} a {es_num(r['upper'], 2)}</td>"
+                  f"<td class='num'>{es_p(r['p_ajustada'])}</td><td>{sig}</td></tr>")
+    return f"<table>{head}<tbody>{filas}</tbody></table>"
+
+
+def main_factorial() -> None:
+    """Genera pagina/factorial/index.html con el estándar del estudio (gen × cepa, severidad)."""
+    DIR_PAG_FACT = RAIZ / "pagina" / "factorial"
+
+    aud = _factorial_tabla("auditoria")
+    med_cepa = _factorial_tabla("medias_por_cepa")
+    med_gen = _factorial_tabla("medias_por_gen")
+    anova = _factorial_tabla("anova")
+    ph_cepas = _factorial_tabla("posthoc_cepas")
+
+    faltantes = [n for n, t in [
+        ("auditoria", aud), ("medias_por_cepa", med_cepa), ("medias_por_gen", med_gen),
+        ("anova", anova), ("posthoc_cepas", ph_cepas),
+    ] if t is None]
+    if faltantes:
+        sys.exit(f"Faltan tablas Factorial en factorial/resultados/tablas/: {faltantes}. "
+                 f"Ejecuta el pipeline factorial primero.")
+
+    f = {
+        "box_cepa": _html_figura(fig_factorial_boxplot_cepa()),
+        "box_gen": _html_figura(fig_factorial_boxplot_gen()),
+        "medias_cepa": _html_figura(fig_factorial_medias_cepa(med_cepa)),
+    }
+
+    html_aud = html_tabla_auditoria(aud)
+    html_anova = html_tabla_anova_factorial(anova)
+    html_posthoc = html_tabla_posthoc_factorial(ph_cepas)
+
+    filas_med_cepa = "".join(
+        f"<tr><td><strong>{r['cepa']}</strong></td><td class='num'>{es_num(r['media'], 2)}</td>"
+        f"<td class='num'>{es_num(r['se'], 2)}</td>"
+        f"<td class='num'>{es_num(r['ic95_inf'], 2)} a {es_num(r['ic95_sup'], 2)}</td></tr>"
+        for _, r in med_cepa.sort_values("media", ascending=False).iterrows()
+    )
+    html_med_cepa = (
+        "<table><thead><tr><th>Cepa</th><th>Media</th><th>EE</th><th>IC 95%</th></tr></thead>"
+        f"<tbody>{filas_med_cepa}</tbody></table>"
+    )
+
+    css = CSS
+    nav = (
+        f'<a class="enlace vuelta" href="../index.html" title="Volver al índice de análisis">← Análisis</a>'
+        + "".join(
+            f'<a class="enlace" href="#{seccion}">{etiqueta}</a>'
+            for seccion, etiqueta in [
+                ("hero", "Resumen"), ("desafio", "El ensayo"), ("diseno", "Diseño"),
+                ("ruta", "Ruta estadística"), ("bloque-resultados", "Resultados"),
+                ("conclusiones", "Conclusiones"), ("metodologia", "Metodología"),
+            ]
+        )
+    )
+
+    hero_cifras = "".join(
+        f'<div class="cifra"><div class="valor">{valor}</div>'
+        f'<div class="etiqueta">{etiqueta}</div></div>'
+        for valor, etiqueta in [
+            ("204", "observaciones (una por celda)"),
+            ("17", "genotipos de trigo"),
+            ("4", "cepas de Fusarium"),
+            ("3", "años (bloques)"),
+        ]
+    )
+
+    html = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Análisis factorial genotipo × cepa de la severidad de Fusarium en trigo — 17 genotipos, 4 cepas, 3 años.">
+<title>Factorial — Genotipo × Cepa (trigo × Fusarium)</title>
+<script src="{PLOTLY_CDN}"></script>
+<style>{css}</style>
+</head>
+<body>
+<nav class="fijo">
+  <span class="marca">Thymus × Fusarium</span>
+  {nav}
+</nav>
+
+<div class="contenido">
+
+  <!-- ================= SECCION 1: HERO ================= -->
+  <section id="hero" class="seccion ancla">
+    <h1 class="titulo-hero">Factorial — Genotipo × Cepa (trigo × <em>Fusarium</em>)</h1>
+    <p class="subtitulo-hero">Severidad de enfermedad (<em>y</em>) de 17 genotipos de trigo frente a
+    4 cepas de <em>Fusarium</em> spp., medida en 3 campañas (1986–1988). Modelo lineal factorial
+    genotipo + cepa + año + interacción, con comparaciones Tukey HSD.</p>
+    <div class="grid-cifras">{hero_cifras}</div>
+  </section>
+
+  <!-- ================= SECCION 2: EL ENSAYO ================= -->
+  <section id="desafio" class="seccion ancla">
+    <h2 class="seccion-titulo"><span class="num">2</span>El ensayo</h2>
+    <p class="lead">La variable <strong><em>y</em></strong> es la <strong>severidad de enfermedad</strong>:
+    un valor mayor indica más enfermedad. Se comparan 17 genotipos de trigo frente a 4 cepas de
+    <em>Fusarium</em> en un diseño factorial 17 × 4 × 3.</p>
+    <p>Existe <strong>una sola observación por celda</strong> genotipo × cepa × año
+    (sin replicación intra-celda): los tres años actúan como bloque, pero el residuo del modelo
+    mezcla la variación entre años con el error experimental, ya que no hay error puro dentro de la
+    celda. Esta limitación se documenta y se recomienda replicación intra-celda.</p>
+    <div class="que-significa verde">
+      <div class="titulo-tarjeta">Qué significa</div>
+      <p>Al no emplearse concentraciones, no procede estimar curvas dosis-respuesta ni EC50/EC90.
+      Además, ningún genotipo se clasifica como «resistente»: se describe la severidad relativa
+      (mayor o menor) entre genotipos y la agresividad relativa entre cepas.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECCION 3: DISEÑO ================= -->
+  <section id="diseno" class="seccion ancla">
+    <h2 class="seccion-titulo"><span class="num">3</span>Diseño experimental</h2>
+    {html_aud}
+    <p>La auditoría confirma un diseño balanceado: 204 observaciones = 17 genotipos × 4 cepas × 3 años,
+    exactamente 1 observación por celda, sin valores faltantes, duplicados ni valores imposibles
+    (y ∈ [0, 100]).</p>
+  </section>
+
+  <!-- ================= SECCION 4: RUTA ================= -->
+  <section id="ruta" class="seccion ancla">
+    <h2 class="seccion-titulo"><span class="num">4</span>Ruta estadística</h2>
+    <table>
+    <thead><tr><th>Etapa</th><th>Método</th><th>Resultado clave</th></tr></thead>
+    <tbody>
+    <tr><td><strong>Auditoría</strong></td><td>Balance, NA, duplicados</td><td>204 filas, sin anomalías</td></tr>
+    <tr><td><strong>Descriptivas</strong></td><td>Medias + IC95% por cepa y genotipo</td><td>F39 = 24,30; F436 = 10,41</td></tr>
+    <tr><td><strong>Modelo</strong></td><td>Lineal: y ~ C(gen) + C(strain) + C(year) + C(gen):C(strain)</td><td>F(cepa) = 43,22; F(gen) = 8,75</td></tr>
+    <tr><td><strong>Interacción</strong></td><td>Término gen × cepa (48 gl)</td><td>F = 1,25; p = 0,160 → no significativa</td></tr>
+    <tr><td><strong>Post-hoc</strong></td><td>Tukey HSD por cepa y genotipo</td><td>F39 difiere del resto de cepas</td></tr>
+    </tbody>
+    </table>
+  </section>
+
+  <!-- ================= SECCION 5: RESULTADOS ================= -->
+  <section id="bloque-resultados" class="seccion ancla">
+    <h2 class="seccion-titulo"><span class="num">5</span>Resultados</h2>
+
+    <h3 class="sub-seccion">Exploración descriptiva</h3>
+    {html_figura_bloque("Severidad por cepa", f["box_cepa"], "Boxplot con todos los puntos por cepa; la caja muestra mediana y cuartiles. F39 concentra los valores más altos de severidad.", "A")}
+    {html_figura_bloque("Severidad por genotipo", f["box_gen"], "Boxplot por genotipo ordenado por severidad media descendente: el gradiente va de SVP72005-20-3-1 (mayor) a SVP72017-17-5-10 (menor).", "B")}
+
+    <h3 class="sub-seccion">Severidad media por cepa con IC 95%</h3>
+    {html_figura_bloque("Medias por cepa", f["medias_cepa"], "Barras de medias con IC95%; F39 supera con holgura al resto y los intervalos de F329, F348 y F436 se superponen.", "C")}
+    {html_med_cepa}
+
+    <h3 class="sub-seccion">ANOVA factorial</h3>
+    {html_anova}
+    <div class="que-significa verde">
+      <div class="titulo-tarjeta">Qué significa</div>
+      <p>La <strong>cepa</strong> es el factor dominante (F = 43,22; p &lt; 0,001; η² = 0,277):
+      existen diferencias reales de agresividad entre aislados. El <strong>genotipo</strong> también
+      es significativo (F = 8,75; p &lt; 0,001; η² = 0,298), reflejando un gradiente de severidad
+      relativa. La <strong>interacción</strong> genotipo × cepa no es significativa (F = 1,25;
+      p = 0,160), lo que sugiere efectos aproximadamente aditivos.</p>
+    </div>
+
+    <h3 class="sub-seccion">Comparaciones post-hoc (Tukey HSD) entre cepas</h3>
+    {html_posthoc}
+    <p>F39 difiere significativamente de las otras tres cepas; F329, F348 y F436 no difieren entre sí.
+    Ranking de agresividad relativa: <strong>F39 &gt; F436 &gt; F329 &gt; F348</strong>.</p>
+
+    <h3 class="sub-seccion">Genotipos extremos</h3>
+    <table><thead><tr><th>Posición</th><th>Genotipo</th><th>Severidad media</th><th>IC 95%</th></tr></thead>
+    <tbody>
+    <tr><td class="num">Mayor</td><td>SVP72005-20-3-1</td><td class="num">{es_num(med_gen['media'].max(), 2)}</td><td class="num">{es_num(med_gen.loc[med_gen['media'].idxmax(), 'ic95_inf'], 2)} a {es_num(med_gen.loc[med_gen['media'].idxmax(), 'ic95_sup'], 2)}</td></tr>
+    <tr><td class="num">Menor</td><td>SVP72017-17-5-10</td><td class="num">{es_num(med_gen['media'].min(), 2)}</td><td class="num">{es_num(med_gen.loc[med_gen['media'].idxmin(), 'ic95_inf'], 2)} a {es_num(med_gen.loc[med_gen['media'].idxmin(), 'ic95_sup'], 2)}</td></tr>
+    </tbody></table>
+    <p>Con lenguaje de <strong>severidad relativa</strong> (no de resistencia): el genotipo
+    SVP72005-20-3-1 presenta la mayor severidad media (26,06) y SVP72017-17-5-10 la menor (2,62).
+    Arina también se ubica entre los de menor severidad relativa (3,94).</p>
+  </section>
+
+  <!-- ================= SECCION 6: CONCLUSIONES ================= -->
+  <section id="conclusiones" class="seccion ancla">
+    <h2 class="seccion-titulo"><span class="num">6</span>Conclusiones</h2>
+    <p>La auditoría confirma un diseño factorial balanceado con una observación por celda. El factor
+    <strong>cepa</strong> domina la respuesta (F = 43,22; p ≈ 1×10⁻¹⁹), seguido del
+    <strong>genotipo</strong> (F = 8,75; p ≈ 3×10⁻¹⁴); la interacción genotipo × cepa no es
+    significativa (p = 0,160).</p>
+    <div class="que-significa">
+      <div class="titulo-tarjeta">Limitaciones</div>
+      <p>Sin replicación intra-celda no existe error puro: el residuo confunde variación entre años y
+      error experimental. Año se modela como bloque fijo. Al no haber dosis, no se estiman EC50/EC90,
+      y no se clasifica a ningún genotipo como «resistente» sin un umbral validado.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECCION 7: METODOLOGIA ================= -->
+  <section id="metodologia" class="seccion ancla">
+    <h2 class="seccion-titulo"><span class="num">7</span>Metodología y reproducibilidad</h2>
+    <p>Pipeline reproducible: <code>factorial/analisis_factorial.py</code> (auditoría → descriptivas →
+    modelo lineal → Tukey). Resultados en <code>factorial/resultados/</code>. Datos crudos:
+    <code>FACTORIAL_Snijders_Fusarium_genotipo_cepa.csv</code> (204 filas, inmutables). Informe:
+    <code>factorial/resultados/reportes/informe_factorial.md</code>.</p>
+  </section>
+
+</div>
+
+<footer>
+  <div class="interno">
+    <p>Análisis factorial genotipo × cepa · Página generada automáticamente por
+    <code>generar_pagina.py --diseno factorial</code> · Datos:
+    <code>FACTORIAL_Snijders_Fusarium_genotipo_cepa.csv</code> · Figuras interactivas con Plotly.js.</p>
+  </div>
+</footer>
+</body>
+</html>
+"""
+    DIR_PAG_FACT.mkdir(parents=True, exist_ok=True)
+    (DIR_PAG_FACT / "index.html").write_text(html, encoding="utf-8")
+    print(f"OK: pagina/factorial/index.html generada con {len(f)} figuras Plotly.")
+    print(f"Tamaño: {sum(len(v) for v in f.values()) / 1024:.0f} KB de figuras embebidas.")
+
+
 def main() -> None:
     if not MASTER_CSV.exists() or not REND_CSV.exists():
         sys.exit(f"Faltan datos maestros: {MASTER_CSV} o {REND_CSV}")
@@ -1904,6 +2263,9 @@ p.sub{font-size:1.1rem;color:var(--gris);max-width:760px;margin:0 0 2.2rem;}
    background:#fff;border-bottom:1px solid var(--borde);padding:.7rem 1.1rem;}
  .ventana-barra h2{margin:0;font-size:1rem;color:var(--azul);}
  .ventana.bdca .ventana-barra h2{color:var(--naranja);}
+ .ventana.factorial .ventana-barra h2{color:var(--verde);}
+ .ventana.factorial .ventana-enlace{background:var(--verde);}
+ .ventana.factorial .ventana-enlace:hover{background:#007E5A;}
  .ventana-barra .estado{margin-bottom:0;}
  .ventana-cuerpo{padding:1.15rem 1.3rem 1.3rem;display:flex;flex-direction:column;flex:1;}
  .ventana-cuerpo p{margin:0 0 .75rem;font-size:.92rem;color:#374151;}
@@ -1918,7 +2280,7 @@ p.sub{font-size:1.1rem;color:var(--gris);max-width:760px;margin:0 0 2.2rem;}
 
 
 def generar_hub() -> None:
-    """Genera pagina/index.html (hub) y placeholders para diseños futuros."""
+    """Genera pagina/index.html (hub) con las ventanas de los análisis disponibles."""
     DIR_PAGINA.mkdir(parents=True, exist_ok=True)
 
     ventanas = [
@@ -1948,13 +2310,18 @@ def generar_hub() -> None:
             ],
             "href": "bdca/index.html",
         },
-    ]
-    futuros = [
         {
             "clave": "factorial",
-            "titulo": "Factorial — Técnica × Concentración × Aislado",
-            "desc": "Múltiples concentraciones, interacciones factoriales y dosis-respuesta (EC50/EC90).",
-            "estado": "futuro", "estado_txt": "Próximamente", "href": "factorial/index.html",
+            "titulo": "Factorial — Genotipo × Cepa (trigo × Fusarium)",
+            "desc": "Severidad de enfermedad en 17 genotipos de trigo frente a 4 cepas de Fusarium "
+                    "a lo largo de 3 campañas. ANOVA genotipo × cepa y comparaciones Tukey HSD.",
+            "puntos": [
+                "17 genotipos × 4 cepas × 3 años",
+                "Severidad (y)",
+                "ANOVA genotipo × cepa",
+                "Tukey HSD",
+            ],
+            "href": "factorial/index.html",
         },
     ]
 
@@ -1973,14 +2340,6 @@ def generar_hub() -> None:
 </div>"""
 
     ventanas_html = "".join(ventana_html(v) for v in ventanas)
-    tarjetas_futuras = "".join(
-        f"""<a class="tarjeta {d['estado']}" href="{d['href']}">
-  <span class="estado {d['estado']}">{d['estado_txt']}</span>
-  <h2>{d['titulo']}</h2>
-  <p>{d['desc']}</p>
-</a>"""
-        for d in futuros
-    )
 
     html = f"""<!DOCTYPE html>
 <html lang="es">
@@ -1997,9 +2356,6 @@ def generar_hub() -> None:
   <p class="sub">Análisis estadísticos reproducibles de los distintos diseños experimentales del estudio.
   Cada análisis tiene su propia ruta: descriptiva → supuestos → modelos → comparaciones → interpretación.</p>
   <div class="ventanas">{ventanas_html}</div>
-  <div class="futuro-fila">
-    <div class="grid">{tarjetas_futuras}</div>
-  </div>
   <p class="pie">Página generada por <code>generar_pagina.py --hub</code> · Repositorio:
   <a class="pie-enlace" href="https://github.com/marcos-Nieves-24/proyecto-tomillo">proyecto-tomillo</a>.</p>
 </div>
@@ -2008,44 +2364,22 @@ def generar_hub() -> None:
 """
     (DIR_PAGINA / "index.html").write_text(html, encoding="utf-8")
 
-    for d in futuros:
-        sub = DIR_PAGINA / d["clave"]
-        sub.mkdir(parents=True, exist_ok=True)
-        ph = f"""<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{d['titulo']} — Próximamente</title>
-<style>{CSS_HUB}</style>
-</head>
-<body>
-<div class="contenido">
-  <p><a class="pie-enlace" href="../index.html">← Volver al índice de análisis</a></p>
-  <h1>{d['titulo']}</h1>
-  <p class="sub">Este análisis se encuentra en preparación. Cuando estén disponibles los datos del diseño,
-  esta página mostrará los resultados completos con el mismo estándar que los análisis DCA y BDCA.</p>
-</div>
-</body>
-</html>
-"""
-        (sub / "index.html").write_text(ph, encoding="utf-8")
-
-    futuros_clave = [d["clave"] for d in futuros]
-    print(f"OK: pagina/index.html (hub) + placeholders {futuros_clave or 'ninguno'} generados.")
+    print(f"OK: pagina/index.html (hub) con {len(ventanas)} análisis generado.")
 
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Genera la pagina interactiva del estudio.")
-    parser.add_argument("--hub", action="store_true", help="genera el hub y los placeholders")
-    parser.add_argument("--diseno", choices=["dca", "bdca"], default="dca", help="analisis a generar")
+    parser.add_argument("--hub", action="store_true", help="genera el hub con las ventanas de análisis")
+    parser.add_argument("--diseno", choices=["dca", "bdca", "factorial"], default="dca", help="analisis a generar")
     args = parser.parse_args()
 
     if args.hub:
         generar_hub()
     elif args.diseno == "bdca":
         main_bdca()
+    elif args.diseno == "factorial":
+        main_factorial()
     else:
         main()

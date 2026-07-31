@@ -37,6 +37,9 @@ p.sub{font-size:1.1rem;color:var(--gris);max-width:760px;margin:0 0 2.2rem;}
    background:#fff;border-bottom:1px solid var(--borde);padding:.7rem 1.1rem;}
  .ventana-barra h2{margin:0;font-size:1rem;color:var(--azul);}
  .ventana.bdca .ventana-barra h2{color:var(--naranja);}
+ .ventana.factorial .ventana-barra h2{color:var(--verde);}
+ .ventana.factorial .ventana-enlace{background:var(--verde);}
+ .ventana.factorial .ventana-enlace:hover{background:#007E5A;}
  .ventana-barra .estado{margin-bottom:0;}
  .ventana-cuerpo{padding:1.15rem 1.3rem 1.3rem;display:flex;flex-direction:column;flex:1;}
  .ventana-cuerpo p{margin:0 0 .75rem;font-size:.92rem;color:#374151;}
@@ -74,14 +77,17 @@ p.sub{font-size:1.1rem;color:var(--gris);max-width:760px;margin:0 0 2.2rem;}
     <ul class="ventana-lista"><li>Rendimiento (yield)</li><li>4 tratamientos × 9 bloques</li><li>Modelo mixto con bloque aleatorio</li><li>Comparaciones Tukey HSD</li></ul>
     <a class="ventana-enlace" href="bdca/index.html">Ver análisis →</a>
   </div>
-</div></div>
-  <div class="futuro-fila">
-    <div class="grid"><a class="tarjeta futuro" href="factorial/index.html">
-  <span class="estado futuro">Próximamente</span>
-  <h2>Factorial — Técnica × Concentración × Aislado</h2>
-  <p>Múltiples concentraciones, interacciones factoriales y dosis-respuesta (EC50/EC90).</p>
-</a></div>
+</div><div class="ventana factorial">
+  <div class="ventana-barra">
+    <h2>Factorial — Genotipo × Cepa (trigo × Fusarium)</h2>
+    <span class="estado activo">Disponible</span>
   </div>
+  <div class="ventana-cuerpo">
+    <p>Severidad de enfermedad en 17 genotipos de trigo frente a 4 cepas de Fusarium a lo largo de 3 campañas. ANOVA genotipo × cepa y comparaciones Tukey HSD.</p>
+    <ul class="ventana-lista"><li>17 genotipos × 4 cepas × 3 años</li><li>Severidad (y)</li><li>ANOVA genotipo × cepa</li><li>Tukey HSD</li></ul>
+    <a class="ventana-enlace" href="factorial/index.html">Ver análisis →</a>
+  </div>
+</div></div>
   <p class="pie">Página generada por <code>generar_pagina.py --hub</code> · Repositorio:
   <a class="pie-enlace" href="https://github.com/marcos-Nieves-24/proyecto-tomillo">proyecto-tomillo</a>.</p>
 </div>
