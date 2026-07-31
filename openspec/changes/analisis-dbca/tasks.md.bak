@@ -1,0 +1,85 @@
+# Tasks: DBCA (RCBD) Yield Analysis
+
+## Review Workload Forecast
+
+| Field | Value |
+|-------|-------|
+| Estimated changed lines | ~1,150–1,350 authored (Ph 1–2 ~135; Ph 3 ~500; Ph 4 ~550; Ph 5–6 generated/verification) |
+| 400-line budget risk | High |
+| Chained PRs recommended | Yes |
+| Suggested split | PR1 registry+CSV → PR2 bdca analysis core → PR3 bdca reporting → PR4 notebook generator → PR5 page+hub → PR6 run+verify |
+| Delivery strategy | ask-on-risk |
+| Chain strategy | feature-branch-chain |
+
+Decision needed before apply: Yes
+Chained PRs recommended: Yes
+Chain strategy: feature-branch-chain
+400-line budget risk: High
+
+### Suggested Work Units
+
+| Unit | Goal | Likely PR | Focused test command | Runtime harness | Rollback boundary |
+|------|------|-----------|----------------------|-----------------|-------------------|
+| 1 | Registry + CSV move + docs | PR 1 | `python -c "import pipeline.config"` with env unset / `bdca` / `foo` | `PIPELINE_DISENO=foo` → warn + fallback dca | revert `config.py`; restore CSV path |
+| 2 | bdca analysis core (`cargar/eda/supuestos/modelos`) | PR 2 | `PIPELINE_DISENO=bdca python -c "from pipeline.bdca import modelos"` | run cargar→modelos on 36-row CSV | delete `pipeline/bdca/` |
+| 3 | bdca reporting (`comparaciones/informe`) | PR 3 | full informe run; 5 result dirs populated | `PIPELINE_DISENO=bdca python -c "import pipeline.bdca.informe"` | delete `bdca/resultados` |
+| 4 | Notebook generator bdca template | PR 4 | generate + execute `bdca/analisis_bdca.ipynb` | `PIPELINE_DISENO=bdca python generar_notebook_pipeline.py` | revert generator diff |
+| 5 | Page + hub bdca | PR 5 | page renders; hub statuses | `python generar_pagina.py --diseno bdca; python generar_pagina.py --hub` | revert generator diff; regenerate hub |
+| 6 | Run bdca + DCA regression/isolation | PR 6 | DCA `git diff` clean + `git status` isolation | full `PIPELINE_DISENO=bdca` run | delete `bdca/` + artifacts |
+
+## Phase 1: Design registry (Foundation)
+
+- [ ] 1.1 `pipeline/config.py`: add `DISENOS` dict (`dca`,`bdca`; nombre/dir_diseno/dir_crudos) + `_resolver_diseno_activo()` (env `PIPELINE_DISENO`, default `dca`, `warnings.warn` + fallback); resolve before the `mkdir` loop (config.py:53); derive `DIR_DISENO`/`DIR_CRUDOS` from `DISENOS[DISENO]`. Verify: unset→dca paths, `bdca`→bdca paths, `foo`→warn+dca.
+- [ ] 1.2 Verify derived constants (`EXCEL_CRUDO`, `DIR_TABLAS`…) resolve under both designs via smoke import.
+
+## Phase 2: Raw CSV relocation + traceability
+
+- [ ] 2.1 `mv DBCA_Jenkyn_control_mildeo.csv` → `datos_crudos/bdca/` + `git add` (untracked file → `mv`, not `git mv`); byte-identical via `sha256sum`.
+- [ ] 2.2 `AGENTS.md` §4: document bdca source path + schema `plot, trt, block, yield` + provenance rules.
+- [ ] 2.3 Docstrings `pipeline/config.py`, `pipeline/limpiar.py`, `pipeline/informe.py`: reference `datos_crudos/bdca/` (docstring-only, no behavior change).
+
+## Phase 3: pipeline/bdca/ modules (Core)
+
+- [ ] 3.1 `pipeline/bdca/__init__.py` subpackage docstring (mirrors `pipeline/__init__.py`).
+- [ ] 3.2 `cargar.py`: load CSV; audit 36 rows, 9/trt, 4/block, no NA/dups; anomalies reported, never imputed.
+- [ ] 3.3 `eda.py`: descriptivos + IC95% per treatment (reuse `_ic95` pattern).
+- [ ] 3.4 `supuestos.py`: Shapiro-Wilk, Levene, Durbin-Watson on block-ANOVA residuals; document chosen route.
+- [ ] 3.5 `modelos.py`: `anova_bloques(df)` (`smf.ols("yield ~ C(trt)+C(block)")`, `anova_lm` typ=2), `lmm_bloques(df)` (`smf.mixedlm` groups=block, REML; ICC=`cov_re[0,0]/scale`); additivity-limitation note.
+- [ ] 3.6 `comparaciones.py`: `posthoc_tukey(df)` (`pairwise_tukeyhsd`, 6 pairs, `vs_referencia_R` column); no Dunnett, no CLD.
+- [ ] 3.7 `informe.py`: tables/figures (boxplot, residual diagnostics, tukey plot)/reports/excel via `guardar_tabla`, `save_figure_pub`, `exportar_excel`; every derived value documents source/formula/reason.
+
+## Phase 4: Generator templates + hub
+
+- [ ] 4.1 `generar_notebook_pipeline.py`: rename `construir_notebook()` → `construir_notebook_dca()`; add `construir_notebook_bdca()` (single-response, neutral Spanish); env-driven `SALIDA` → `bdca/analisis_bdca.ipynb`.
+- [ ] 4.2 `generar_pagina.py`: `--diseno` choices `dca,bdca`; add `main_bdca()`; `generar_hub` writes placeholder only for `estado=="futuro"`; bdca card → activo/"Disponible".
+
+## Phase 5: Run bdca pipeline
+
+- [ ] 5.1 Run `PIPELINE_DISENO=bdca` end-to-end (notebook execution method pending — see Risks).
+- [ ] 5.2 Verify `bdca/resultados/{database,tablas,figuras,reportes,excel}` populated; notebook executes; page renders.
+
+## Phase 6: Regression & isolation verification
+
+- [ ] 6.1 DCA regression guard: env unset → regenerate `dca/analisis_dca.ipynb` + `pagina/dca/index.html`; `git diff` clean.
+- [ ] 6.2 Isolation: `git status` before/after bdca run — no file under `dca/` or `datos_crudos/dca/` created/modified.
+
+## Traceability (14 requirements / 23 scenarios)
+
+| Tasks | Requirements (scenarios) |
+|-------|--------------------------|
+| 1.1–1.2 | REG-1 (3), REG-2 (1) |
+| 2.1 | RAW-1 (2) |
+| 2.2–2.3 | RAW-2 (1) |
+| 3.2 | YLD-1 (2) |
+| 3.3, 3.7 | YLD-5 (1) |
+| 3.4 | YLD-2 (2) |
+| 3.5 | YLD-3 (2) |
+| 3.6 | YLD-4 (1) |
+| 3.7 | RAW-3 (1), REP-2 (1) |
+| 4.1 | REP-1 (1) |
+| 4.2 | REP-3 (2) |
+| 5.2 | REP-2 (1) |
+| 6.1 | REG-3 (1) |
+| 6.2 | REG-2 (1), REP-2 (1) |
+
+Total scenarios covered: 23/23 (REG-1:3, REG-2:2, REG-3:1, RAW-1:2, RAW-2:1, RAW-3:1, YLD-1:2, YLD-2:2, YLD-3:2, YLD-4:1, YLD-5:1, REP-1:1, REP-2:2, REP-3:2).

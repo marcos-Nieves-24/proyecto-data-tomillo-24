@@ -1,0 +1,57 @@
+# openspec/config.yaml — configuracion SDD del proyecto
+schema: spec-driven
+
+context: |
+  Proyecto: Tomillo x Fusarium spp. — analisis de la actividad antifungica
+  Stack: Python cientifico (pandas, numpy, scipy, statsmodels, pingouin,
+    scikit-learn, matplotlib, seaborn, openpyxl, plotly, nbformat)
+  Arquitectura: pipeline reproducible por fases (paquete pipeline/, un modulo
+    por fase) + generadores de notebooks (generar_notebook_pipeline.py,
+    dca/generar_notebook.py) y de pagina estatica Plotly (generar_pagina.py ->
+    pagina/, deploy Vercel). Un directorio por diseno experimental (dca/,
+    bdca/, factorial/) con datos crudos inmutables en datos_crudos/<diseno>/.
+  Convenciones: AGENTS.md con reglas cientificas estrictas (no fabricar ni
+    imputar datos, unidades biologicas vs tecnicas, reportar efecto e IC junto
+    al p-valor, semillas aleatorias fijas). Artefactos en espanol profesional
+    y neutro.
+  Testing: none (pipeline de analisis sin suite de tests)
+
+rules:
+  proposal:
+    - Incluir plan de rollback para cambios riesgosos
+    - Declarar explicitamente todo cambio que toque datos crudos (prohibido modificar datos_crudos/)
+  specs:
+    - Usar Given/When/Then en los escenarios
+    - Usar palabras clave RFC 2119 (MUST, SHALL, SHOULD, MAY)
+    - Toda transformacion de datos debe documentar variables fuente, formula y razon
+  design:
+    - Documentar decisiones de arquitectura con justificacion
+    - Respetar la estructura por diseno experimental (dca/, bdca/, factorial/) y la organizacion por fases de pipeline/
+  tasks:
+    - Agrupar por fase, usar numeracion jerarquica
+    - Mantener tareas completables en una sesion
+  apply:
+    guidelines:
+      - Seguir los patrones de codigo existentes (modulos por fase en pipeline/, espanol en comentarios y artefactos)
+      - No fabricar ni imputar observaciones; fijar semillas aleatorias
+    tdd: false           # sin runner de tests; verificacion por ejecucion de pipeline
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: "python -c \"import pipeline\""
+    coverage_threshold: 0
+  archive:
+    - Avisar antes de fusionar deltas destructivos
+
+testing:
+  runner: none
+  strict_tdd: false
+  layers:
+    unit: false
+    integration: false
+    e2e: false
+  coverage: false
+  verify_strategy: >-
+    Ejecucion de la pipeline como smoke test (importar pipeline, regenerar
+    notebooks con generar_notebook_pipeline.py) y auditoria manual de tablas y
+    figuras contra AGENTS.md.
